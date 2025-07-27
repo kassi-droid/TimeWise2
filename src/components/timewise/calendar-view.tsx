@@ -43,13 +43,15 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry }: Ca
 
   const scheduledDays = React.useMemo(() => {
     return scheduledEntries.map(entry => {
-      const date = new Date(entry.date);
-      return addDays(date, 1);
+      // The `entry.date` is 'YYYY-MM-DD'. We need to parse it as UTC to avoid timezone issues.
+      const [year, month, day] = entry.date.split('-').map(Number);
+      return new Date(Date.UTC(year, month - 1, day));
     });
   }, [scheduledEntries]);
   
   const selectedDayEntries = React.useMemo(() => {
     if (!selectedDate) return [];
+    // Format selectedDate to 'YYYY-MM-DD' to match the entry date format
     const selectedDateString = selectedDate.toISOString().split('T')[0];
     return scheduledEntries
       .filter(entry => entry.date === selectedDateString)
