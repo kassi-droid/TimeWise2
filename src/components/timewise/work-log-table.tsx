@@ -47,6 +47,15 @@ const formatDate = (dateStr: string) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' });
 };
 
+const formatTime = (timeStr: string) => {
+    if (!timeStr) return '';
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const hours12 = hours % 12 || 12; // Convert 0 to 12 for 12 AM
+    const minutesStr = minutes.toString().padStart(2, '0');
+    return `${hours12}:${minutesStr} ${ampm}`;
+};
+
 export default function WorkLogTable({ title, titleClassName, entries, isPaidLog, deleteEntry, togglePaidStatus, emptyState }: WorkLogTableProps) {
   
   const { toast } = useToast();
@@ -123,7 +132,7 @@ export default function WorkLogTable({ title, titleClassName, entries, isPaidLog
                   <TableRow key={entry.id}>
                     <TableCell>
                       <div className="font-semibold">{formatDate(entry.date)}</div>
-                      <div className="text-xs text-muted-foreground">{entry.startTime} - {entry.endTime}</div>
+                      <div className="text-xs text-muted-foreground">{formatTime(entry.startTime)} - {formatTime(entry.endTime)}</div>
                       <div className="text-xs text-muted-foreground">@{entry.hourlyRate.toFixed(2)}/hr</div>
                     </TableCell>
                     <TableCell className="text-center font-medium">{entry.workHours.toFixed(1)}h</TableCell>

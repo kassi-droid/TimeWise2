@@ -41,6 +41,15 @@ const scheduleFormSchema = z.object({
 
 type ScheduleFormValues = z.infer<typeof scheduleFormSchema>;
 
+const formatTime = (timeStr: string) => {
+    if (!timeStr) return '';
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const hours12 = hours % 12 || 12; // Convert 0 to 12 for 12 AM
+    const minutesStr = minutes.toString().padStart(2, '0');
+    return `${hours12}:${minutesStr} ${ampm}`;
+};
+
 export default function CalendarView({ scheduledEntries, addScheduledEntry, deleteScheduledEntry }: CalendarViewProps) {
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date());
 
@@ -188,7 +197,7 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry, dele
                         <li key={entry.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
                             <div>
                               <p className="font-semibold">{entry.title}</p>
-                              <p className="text-sm text-muted-foreground">{entry.startTime} - {entry.endTime}</p>
+                              <p className="text-sm text-muted-foreground">{formatTime(entry.startTime)} - {formatTime(entry.endTime)}</p>
                             </div>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
@@ -234,7 +243,7 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry, dele
                   <div>
                     <p className="font-bold">{parseISO(entry.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
                     <p className="font-semibold">{entry.title}</p>
-                    <p className="text-sm text-muted-foreground">{entry.startTime} - {entry.endTime}</p>
+                    <p className="text-sm text-muted-foreground">{formatTime(entry.startTime)} - {formatTime(entry.endTime)}</p>
                   </div>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
