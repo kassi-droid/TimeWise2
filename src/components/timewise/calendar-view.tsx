@@ -83,7 +83,15 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry, dele
   }, [selectedDate, scheduledEntries]);
 
   const allScheduledEntriesSorted = React.useMemo(() => {
-    return [...scheduledEntries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to the beginning of the day
+
+    return scheduledEntries
+        .filter(entry => {
+            const entryDate = parseISO(entry.date + 'T00:00:00');
+            return entryDate >= today;
+        })
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [scheduledEntries]);
 
   const onSubmit = (values: ScheduleFormValues) => {
