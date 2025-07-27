@@ -73,6 +73,10 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry, dele
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   }, [selectedDate, scheduledEntries]);
 
+  const allScheduledEntriesSorted = React.useMemo(() => {
+    return [...scheduledEntries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [scheduledEntries]);
+
   const onSubmit = (values: ScheduleFormValues) => {
     addScheduledEntry(values);
     form.reset({
@@ -215,6 +219,52 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry, dele
                     ))}
                 </ul>
             </CardContent>
+        </Card>
+      )}
+
+      {allScheduledEntriesSorted.length > 0 && (
+        <Card className="shadow-xl bg-white/95 backdrop-blur-md">
+          <CardHeader>
+            <CardTitle className="font-headline text-xl">All Scheduled Work Days</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-4">
+              {allScheduledEntriesSorted.map(entry => (
+                <li key={entry.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                  <div>
+                    <p className="font-bold">{parseISO(entry.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+                    <p className="font-semibold">{entry.title}</p>
+                    <p className="text-sm text-muted-foreground">{entry.startTime} - {entry.endTime}</p>
+                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-100"
+                      >
+                        <Trash2 size={18} />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete the scheduled shift. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteScheduledEntry(entry.id)}>
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
         </Card>
       )}
 
