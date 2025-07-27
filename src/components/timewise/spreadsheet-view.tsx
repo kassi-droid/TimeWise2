@@ -6,8 +6,8 @@ import WorkLogTable from './work-log-table';
 
 interface SpreadsheetViewProps {
   entries: WorkEntry[];
-  deleteEntry: (id: number) => void;
-  togglePaidStatus: (id: number) => void;
+  deleteEntry: (id: string) => void;
+  togglePaidStatus: (id: string) => void;
 }
 
 export default function SpreadsheetView({ entries, deleteEntry, togglePaidStatus }: SpreadsheetViewProps) {

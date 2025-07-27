@@ -22,7 +22,7 @@ export default function MainApp() {
     });
   };
 
-  const handleDeleteEntry = (id: number) => {
+  const handleDeleteEntry = (id: string) => {
     deleteEntry(id);
     toast({
       title: "Entry Deleted",
@@ -31,7 +31,7 @@ export default function MainApp() {
     })
   }
 
-  const handleTogglePaidStatus = (id: number) => {
+  const handleTogglePaidStatus = (id: string) => {
     togglePaidStatus(id);
     const entry = entries.find(e => e.id === id);
     toast({

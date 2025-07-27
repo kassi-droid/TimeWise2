@@ -12,8 +12,8 @@ interface WorkLogTableProps {
   titleClassName?: string;
   entries: WorkEntry[];
   isPaidLog: boolean;
-  deleteEntry: (id: number) => void;
-  togglePaidStatus: (id: number) => void;
+  deleteEntry: (id: string) => void;
+  togglePaidStatus: (id: string) => void;
   emptyState: {
     icon: string;
     message: string;

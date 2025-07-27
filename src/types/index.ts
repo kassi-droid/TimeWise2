@@ -1,5 +1,5 @@
 export type WorkEntry = {
-  id: number;
+  id: string;
   date: string;
   startTime: string;
   endTime: string;
