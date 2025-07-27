@@ -12,8 +12,6 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { google } from 'googleapis';
 import { GoogleAuth } from 'google-auth-library';
-import type { WorkEntry } from '@/types';
-import { initializeApp, getApps } from "firebase/app";
 
 // This is a public configuration and is safe to have in the code.
 const firebaseConfig = {
@@ -47,15 +45,6 @@ const ExportToSheetOutputSchema = z.object({
 });
 export type ExportToSheetOutput = z.infer<typeof ExportToSheetOutputSchema>;
 
-async function getAuth() {
-  const auth = new GoogleAuth({
-    projectId: firebaseConfig.projectId,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  });
-  const client = await auth.getClient();
-  return client;
-}
-
 export async function exportToSheet(input: ExportToSheetInput): Promise<ExportToSheetOutput> {
   return exportToSheetFlow(input);
 }
@@ -68,8 +57,12 @@ const exportToSheetFlow = ai.defineFlow(
   },
   async (entries) => {
     try {
-      const auth = await getAuth();
-      const sheets = google.sheets({ version: 'v4', auth });
+      const auth = new GoogleAuth({
+        projectId: firebaseConfig.projectId,
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      });
+      const client = await auth.getClient();
+      const sheets = google.sheets({ version: 'v4', auth: client });
 
       const spreadsheet = await sheets.spreadsheets.create({
         requestBody: {
