@@ -5,7 +5,6 @@ import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { addDays } from 'date-fns';
 
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -69,46 +68,6 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry }: Ca
 
   return (
     <div className="p-4 space-y-4 animate-slide-up">
-      <Card className="shadow-xl bg-white/95 backdrop-blur-md">
-        <CardContent className="p-2">
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={setSelectedDate}
-            modifiers={{ scheduled: scheduledDays }}
-            modifiersStyles={{
-              scheduled: { 
-                fontWeight: 'bold',
-                backgroundColor: 'hsl(var(--accent))',
-                color: 'hsl(var(--accent-foreground))',
-                borderRadius: 'var(--radius)'
-              }
-            }}
-            className="w-full"
-          />
-        </CardContent>
-      </Card>
-      
-      {selectedDate && selectedDayEntries.length > 0 && (
-        <Card className="shadow-xl bg-white/95 backdrop-blur-md">
-            <CardHeader>
-                <CardTitle className="font-headline text-lg">
-                    Scheduled on {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <ul className="space-y-3">
-                    {selectedDayEntries.map(entry => (
-                        <li key={entry.id} className="p-3 bg-secondary rounded-lg">
-                            <p className="font-semibold">{entry.title}</p>
-                            <p className="text-sm text-muted-foreground">{entry.startTime} - {entry.endTime}</p>
-                        </li>
-                    ))}
-                </ul>
-            </CardContent>
-        </Card>
-      )}
-
       <Card className="shadow-xl bg-white/95 backdrop-blur-md">
         <CardHeader>
           <CardTitle className="font-headline text-xl">🗓️ Schedule Work Day</CardTitle>
@@ -175,6 +134,47 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry }: Ca
           </Form>
         </CardContent>
       </Card>
+      
+      <Card className="shadow-xl bg-white/95 backdrop-blur-md">
+        <CardContent className="p-2 flex justify-center">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={setSelectedDate}
+            modifiers={{ scheduled: scheduledDays }}
+            modifiersStyles={{
+              scheduled: { 
+                fontWeight: 'bold',
+                backgroundColor: 'hsl(var(--accent))',
+                color: 'hsl(var(--accent-foreground))',
+                borderRadius: 'var(--radius)'
+              }
+            }}
+            className="w-full max-w-md" // Set max-width to control calendar size
+          />
+        </CardContent>
+      </Card>
+      
+      {selectedDate && selectedDayEntries.length > 0 && (
+        <Card className="shadow-xl bg-white/95 backdrop-blur-md">
+            <CardHeader>
+                <CardTitle className="font-headline text-lg">
+                    Scheduled on {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <ul className="space-y-3">
+                    {selectedDayEntries.map(entry => (
+                        <li key={entry.id} className="p-3 bg-secondary rounded-lg">
+                            <p className="font-semibold">{entry.title}</p>
+                            <p className="text-sm text-muted-foreground">{entry.startTime} - {entry.endTime}</p>
+                        </li>
+                    ))}
+                </ul>
+            </CardContent>
+        </Card>
+      )}
+
     </div>
   );
 }
