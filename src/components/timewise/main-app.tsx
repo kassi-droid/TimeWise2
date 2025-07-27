@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -7,6 +8,7 @@ import AppHeader from './app-header';
 import BottomNav from './bottom-nav';
 import AddEntryForm from './add-entry-form';
 import SpreadsheetView from './spreadsheet-view';
+import CalendarView from './calendar-view';
 import type { WorkEntry } from '@/types';
 
 export default function MainApp() {
@@ -58,6 +60,9 @@ export default function MainApp() {
             deleteEntry={handleDeleteEntry}
             togglePaidStatus={handleTogglePaidStatus}
           />
+        </div>
+        <div className={currentTab === 'calendar' ? 'block' : 'hidden'}>
+          <CalendarView entries={entries} />
         </div>
       </main>
 

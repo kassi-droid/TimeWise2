@@ -1,8 +1,8 @@
+
 "use client";
 
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Plus, BarChart3 } from 'lucide-react';
+import { Plus, BarChart3, CalendarDays } from 'lucide-react';
 
 interface BottomNavProps {
   currentTab: string;
@@ -13,6 +13,7 @@ export default function BottomNav({ currentTab, onTabChange }: BottomNavProps) {
   const navItems = [
     { id: 'add', label: 'Add Entry', icon: Plus },
     { id: 'spreadsheet', label: 'Spreadsheet', icon: BarChart3 },
+    { id: 'calendar', label: 'Calendar', icon: CalendarDays },
   ];
 
   return (
@@ -25,7 +26,7 @@ export default function BottomNav({ currentTab, onTabChange }: BottomNavProps) {
               key={item.id}
               onClick={() => onTabChange(item.id)}
               className={cn(
-                "flex flex-col items-center justify-center space-y-1 w-28 h-16 rounded-2xl transition-colors duration-200",
+                "flex flex-col items-center justify-center space-y-1 w-24 h-16 rounded-2xl transition-colors duration-200",
                 isActive ? 'bg-primary text-primary-foreground' : 'text-gray-600 hover:bg-primary/50'
               )}
             >
