@@ -13,6 +13,8 @@ export function useScheduledEntries() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchScheduledEntries = useCallback(async () => {
+    // Set loading to true when starting to fetch
+    setIsLoading(true);
     try {
       const q = query(collection(db, SCHEDULED_ENTRIES_COLLECTION), orderBy("date", "desc"));
       const querySnapshot = await getDocs(q);
@@ -34,19 +36,13 @@ export function useScheduledEntries() {
 
   const addScheduledEntry = useCallback(async (newEntry: Omit<ScheduledEntry, 'id'>) => {
     try {
-      const docRef = await addDoc(collection(db, SCHEDULED_ENTRIES_COLLECTION), newEntry);
-      const entryWithId: ScheduledEntry = { ...newEntry, id: docRef.id };
-      
-      setScheduledEntries(prevEntries => {
-        const newEntries = [...prevEntries, entryWithId];
-        newEntries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        return newEntries;
-      });
-
+      await addDoc(collection(db, SCHEDULED_ENTRIES_COLLECTION), newEntry);
+      // After adding, refetch all entries to ensure the calendar is up-to-date
+      await fetchScheduledEntries();
     } catch (error) {
         console.error("Failed to save scheduled entry to Firestore", error);
     }
-  }, []);
+  }, [fetchScheduledEntries]);
 
   return { scheduledEntries, addScheduledEntry, isLoading };
 }
