@@ -27,10 +27,10 @@ const WorkEntrySchema = z.object({
   paid: z.boolean(),
 });
 
-export const ExportToSheetInputSchema = z.array(WorkEntrySchema);
+const ExportToSheetInputSchema = z.array(WorkEntrySchema);
 export type ExportToSheetInput = z.infer<typeof ExportToSheetInputSchema>;
 
-export const ExportToSheetOutputSchema = z.object({
+const ExportToSheetOutputSchema = z.object({
   spreadsheetUrl: z.string().optional(),
 });
 export type ExportToSheetOutput = z.infer<typeof ExportToSheetOutputSchema>;
