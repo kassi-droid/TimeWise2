@@ -5,6 +5,7 @@ import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { format as formatDate, parseISO } from 'date-fns';
 
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,24 +35,26 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry }: Ca
     resolver: zodResolver(scheduleFormSchema),
     defaultValues: {
       title: 'Work Shift',
-      date: new Date().toISOString().split('T')[0],
+      date: formatDate(new Date(), 'yyyy-MM-dd'),
       startTime: '',
       endTime: '',
     },
   });
 
+  // Update form date when calendar date changes
+  React.useEffect(() => {
+    if (selectedDate) {
+      form.setValue('date', formatDate(selectedDate, 'yyyy-MM-dd'));
+    }
+  }, [selectedDate, form]);
+
   const scheduledDays = React.useMemo(() => {
-    return scheduledEntries.map(entry => {
-      // The `entry.date` is 'YYYY-MM-DD'. We need to parse it as UTC to avoid timezone issues.
-      const [year, month, day] = entry.date.split('-').map(Number);
-      return new Date(Date.UTC(year, month - 1, day));
-    });
+    return scheduledEntries.map(entry => parseISO(entry.date));
   }, [scheduledEntries]);
   
   const selectedDayEntries = React.useMemo(() => {
     if (!selectedDate) return [];
-    // Format selectedDate to 'YYYY-MM-DD' to match the entry date format
-    const selectedDateString = selectedDate.toISOString().split('T')[0];
+    const selectedDateString = formatDate(selectedDate, 'yyyy-MM-dd');
     return scheduledEntries
       .filter(entry => entry.date === selectedDateString)
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
