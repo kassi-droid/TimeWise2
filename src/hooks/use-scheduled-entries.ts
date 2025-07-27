@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { collection, getDocs, addDoc, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { ScheduledEntry } from '@/types';
 
@@ -13,7 +13,6 @@ export function useScheduledEntries() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchScheduledEntries = useCallback(async () => {
-    // Set loading to true when starting to fetch
     setIsLoading(true);
     try {
       const q = query(collection(db, SCHEDULED_ENTRIES_COLLECTION), orderBy("date", "desc"));
@@ -37,12 +36,20 @@ export function useScheduledEntries() {
   const addScheduledEntry = useCallback(async (newEntry: Omit<ScheduledEntry, 'id'>) => {
     try {
       await addDoc(collection(db, SCHEDULED_ENTRIES_COLLECTION), newEntry);
-      // After adding, refetch all entries to ensure the calendar is up-to-date
       await fetchScheduledEntries();
     } catch (error) {
         console.error("Failed to save scheduled entry to Firestore", error);
     }
   }, [fetchScheduledEntries]);
 
-  return { scheduledEntries, addScheduledEntry, isLoading };
+  const deleteScheduledEntry = useCallback(async (id: string) => {
+    try {
+      await deleteDoc(doc(db, SCHEDULED_ENTRIES_COLLECTION, id));
+      setScheduledEntries(prevEntries => prevEntries.filter(entry => entry.id !== id));
+    } catch (error) {
+      console.error("Failed to delete scheduled entry from Firestore", error);
+    }
+  }, []);
+
+  return { scheduledEntries, addScheduledEntry, deleteScheduledEntry, isLoading };
 }

@@ -15,7 +15,7 @@ import type { WorkEntry, ScheduledEntry } from '@/types';
 export default function MainApp() {
   const [currentTab, setCurrentTab] = useState('add');
   const { entries, addEntry, deleteEntry, togglePaidStatus, isLoading: isLoadingWork } = useWorkEntries();
-  const { scheduledEntries, addScheduledEntry, isLoading: isLoadingSchedule } = useScheduledEntries();
+  const { scheduledEntries, addScheduledEntry, deleteScheduledEntry, isLoading: isLoadingSchedule } = useScheduledEntries();
   const { toast } = useToast();
 
   const handleAddEntry = (newEntryData: Omit<WorkEntry, 'id' | 'paid'>) => {
@@ -39,6 +39,15 @@ export default function MainApp() {
     toast({
       title: "Entry Deleted",
       description: "The work entry has been removed.",
+      variant: "destructive",
+    })
+  }
+  
+  const handleDeleteScheduledEntry = (id: string) => {
+    deleteScheduledEntry(id);
+    toast({
+      title: "Scheduled Entry Deleted",
+      description: "The scheduled work entry has been removed.",
       variant: "destructive",
     })
   }
@@ -75,6 +84,7 @@ export default function MainApp() {
           <CalendarView 
             scheduledEntries={scheduledEntries} 
             addScheduledEntry={handleAddScheduledEntry}
+            deleteScheduledEntry={handleDeleteScheduledEntry}
           />
         </div>
       </main>

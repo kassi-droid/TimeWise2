@@ -6,17 +6,30 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format as formatDate, parseISO } from 'date-fns';
+import { Trash2 } from 'lucide-react';
 
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { ScheduledEntry } from '@/types';
 
 interface CalendarViewProps {
   scheduledEntries: ScheduledEntry[];
   addScheduledEntry: (newEntry: Omit<ScheduledEntry, 'id'>) => void;
+  deleteScheduledEntry: (id: string) => void;
 }
 
 const scheduleFormSchema = z.object({
@@ -28,7 +41,7 @@ const scheduleFormSchema = z.object({
 
 type ScheduleFormValues = z.infer<typeof scheduleFormSchema>;
 
-export default function CalendarView({ scheduledEntries, addScheduledEntry }: CalendarViewProps) {
+export default function CalendarView({ scheduledEntries, addScheduledEntry, deleteScheduledEntry }: CalendarViewProps) {
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date());
 
   const form = useForm<ScheduleFormValues>({
@@ -41,7 +54,6 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry }: Ca
     },
   });
 
-  // Update form date when calendar date changes
   React.useEffect(() => {
     if (selectedDate) {
       form.setValue('date', formatDate(selectedDate, 'yyyy-MM-dd'));
@@ -49,7 +61,8 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry }: Ca
   }, [selectedDate, form]);
 
   const scheduledDays = React.useMemo(() => {
-    return scheduledEntries.map(entry => parseISO(entry.date));
+    // Add a day to parseISO to account for timezone differences
+    return scheduledEntries.map(entry => parseISO(entry.date + 'T00:00:00'));
   }, [scheduledEntries]);
   
   const selectedDayEntries = React.useMemo(() => {
@@ -153,7 +166,7 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry }: Ca
                 borderRadius: 'var(--radius)'
               }
             }}
-            className="w-full max-w-md" // Set max-width to control calendar size
+            className="w-full max-w-md"
           />
         </CardContent>
       </Card>
@@ -168,9 +181,36 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry }: Ca
             <CardContent>
                 <ul className="space-y-3">
                     {selectedDayEntries.map(entry => (
-                        <li key={entry.id} className="p-3 bg-secondary rounded-lg">
-                            <p className="font-semibold">{entry.title}</p>
-                            <p className="text-sm text-muted-foreground">{entry.startTime} - {entry.endTime}</p>
+                        <li key={entry.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                            <div>
+                              <p className="font-semibold">{entry.title}</p>
+                              <p className="text-sm text-muted-foreground">{entry.startTime} - {entry.endTime}</p>
+                            </div>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-100"
+                                >
+                                  <Trash2 size={18} />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently delete the scheduled shift. This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deleteScheduledEntry(entry.id)}>
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                         </li>
                     ))}
                 </ul>
