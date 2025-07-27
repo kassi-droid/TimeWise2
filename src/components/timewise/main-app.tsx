@@ -3,17 +3,19 @@
 
 import { useState } from 'react';
 import { useWorkEntries } from '@/hooks/use-work-entries';
+import { useScheduledEntries } from '@/hooks/use-scheduled-entries';
 import { useToast } from '@/hooks/use-toast';
 import AppHeader from './app-header';
 import BottomNav from './bottom-nav';
 import AddEntryForm from './add-entry-form';
 import SpreadsheetView from './spreadsheet-view';
 import CalendarView from './calendar-view';
-import type { WorkEntry } from '@/types';
+import type { WorkEntry, ScheduledEntry } from '@/types';
 
 export default function MainApp() {
   const [currentTab, setCurrentTab] = useState('add');
-  const { entries, addEntry, deleteEntry, togglePaidStatus, isLoading } = useWorkEntries();
+  const { entries, addEntry, deleteEntry, togglePaidStatus, isLoading: isLoadingWork } = useWorkEntries();
+  const { scheduledEntries, addScheduledEntry, isLoading: isLoadingSchedule } = useScheduledEntries();
   const { toast } = useToast();
 
   const handleAddEntry = (newEntryData: Omit<WorkEntry, 'id' | 'paid'>) => {
@@ -23,6 +25,14 @@ export default function MainApp() {
       description: `${newEntryData.workHours.toFixed(1)} hours logged.`,
     });
   };
+
+  const handleAddScheduledEntry = (newEntryData: Omit<ScheduledEntry, 'id'>) => {
+    addScheduledEntry(newEntryData);
+    toast({
+      title: "Work Day Scheduled!",
+      description: `Added "${newEntryData.title}" to your calendar.`,
+    });
+  }
 
   const handleDeleteEntry = (id: string) => {
     deleteEntry(id);
@@ -42,7 +52,7 @@ export default function MainApp() {
     });
   }
 
-  if (isLoading) {
+  if (isLoadingWork || isLoadingSchedule) {
       return <div className="flex-1 flex items-center justify-center"><p>Loading entries...</p></div>
   }
 
@@ -62,7 +72,10 @@ export default function MainApp() {
           />
         </div>
         <div className={currentTab === 'calendar' ? 'block' : 'hidden'}>
-          <CalendarView entries={entries} />
+          <CalendarView 
+            scheduledEntries={scheduledEntries} 
+            addScheduledEntry={handleAddScheduledEntry}
+          />
         </div>
       </main>
 

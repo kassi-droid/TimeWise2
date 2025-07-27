@@ -1,3 +1,4 @@
+
 export type WorkEntry = {
   id: string;
   date: string;
@@ -8,4 +9,12 @@ export type WorkEntry = {
   workHours: number;
   earnings: number;
   paid: boolean;
+};
+
+export type ScheduledEntry = {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  title: string;
 };
