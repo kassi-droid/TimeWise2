@@ -13,6 +13,18 @@ import { z } from 'genkit';
 import { google } from 'googleapis';
 import { GoogleAuth } from 'google-auth-library';
 import type { WorkEntry } from '@/types';
+import { initializeApp, getApps } from "firebase/app";
+
+// This is a public configuration and is safe to have in the code.
+const firebaseConfig = {
+  "projectId": "timewise-94kug",
+  "appId": "1:800034535600:web:7038c25eb790ae0f462375",
+  "storageBucket": "timewise-94kug.firebasestorage.app",
+  "apiKey": "AIzaSyByQcR9EBCiJ4vk8Pn6qF8nJ-o7Vhxi5NI",
+  "authDomain": "timewise-94kug.firebaseapp.com",
+  "measurementId": "",
+  "messagingSenderId": "800034535600"
+};
 
 // Define the input schema for the work entries
 const WorkEntrySchema = z.object({
@@ -37,6 +49,7 @@ export type ExportToSheetOutput = z.infer<typeof ExportToSheetOutputSchema>;
 
 async function getAuth() {
   const auth = new GoogleAuth({
+    projectId: firebaseConfig.projectId,
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
   const client = await auth.getClient();
