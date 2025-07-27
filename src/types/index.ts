@@ -9,6 +9,7 @@ export type WorkEntry = {
   workHours: number;
   earnings: number;
   paid: boolean;
+  datePaid?: string;
 };
 
 export type ScheduledEntry = {

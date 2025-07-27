@@ -37,6 +37,7 @@ interface WorkLogTableProps {
 }
 
 const formatDate = (dateStr: string) => {
+    if (!dateStr) return 'N/A';
     const date = new Date(dateStr + 'T00:00:00'); // Treat as local time
     const today = new Date();
     const yesterday = new Date();
@@ -114,6 +115,7 @@ export default function WorkLogTable({ title, titleClassName, entries, isPaidLog
                 <TableHead>Date</TableHead>
                 <TableHead className="text-center">Hours</TableHead>
                 <TableHead className="text-center">Earned</TableHead>
+                {isPaidLog && <TableHead>Date Paid</TableHead>}
                 <TableHead className="text-center">Status</TableHead>
                 {!isPaidLog && <TableHead className="text-center">Delete</TableHead>}
               </TableRow>
@@ -121,7 +123,7 @@ export default function WorkLogTable({ title, titleClassName, entries, isPaidLog
             <TableBody>
               {entries.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={isPaidLog ? 4 : 5} className="h-48 text-center">
+                  <TableCell colSpan={isPaidLog ? 5 : 5} className="h-48 text-center">
                     <div className="text-4xl mb-2">{emptyState.icon}</div>
                     <p className="font-semibold">{emptyState.message}</p>
                     <p className="text-sm text-muted-foreground">{emptyState.description}</p>
@@ -137,6 +139,11 @@ export default function WorkLogTable({ title, titleClassName, entries, isPaidLog
                     </TableCell>
                     <TableCell className="text-center font-medium">{entry.workHours.toFixed(1)}h</TableCell>
                     <TableCell className="text-center font-medium">${entry.earnings.toFixed(2)}</TableCell>
+                    {isPaidLog && (
+                        <TableCell>
+                            <div className="font-semibold">{formatDate(entry.datePaid || '')}</div>
+                        </TableCell>
+                    )}
                     <TableCell className="text-center">
                        <Button
                           variant={isPaidLog ? "secondary" : "outline"}

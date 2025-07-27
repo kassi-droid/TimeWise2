@@ -35,7 +35,7 @@ export function useWorkEntries() {
     try {
       const docRef = await addDoc(collection(db, ENTRIES_COLLECTION), newEntry);
       const entryWithId: WorkEntry = { ...newEntry, id: docRef.id };
-      setEntries(prevEntries => [entryWithId, ...prevEntries]);
+      setEntries(prevEntries => [entryWithId, ...prevEntries].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     } catch (error) {
         console.error("Failed to save entry to Firestore", error);
     }
@@ -55,10 +55,23 @@ export function useWorkEntries() {
       const entryToUpdate = entries.find(entry => entry.id === id);
       if (entryToUpdate) {
         const entryRef = doc(db, ENTRIES_COLLECTION, id);
-        await updateDoc(entryRef, { paid: !entryToUpdate.paid });
+        const newPaidStatus = !entryToUpdate.paid;
+        const updateData: { paid: boolean; datePaid?: string } = { paid: newPaidStatus };
+
+        if (newPaidStatus) {
+          updateData.datePaid = new Date().toISOString().split('T')[0];
+        } else {
+          // If toggling back to unpaid, you might want to remove the datePaid field.
+          // This depends on the desired logic. For now, we'll just set it.
+          // In Firestore, you can use `deleteField()` to remove a field.
+          // For simplicity here, we leave it, but a `null` value could also work.
+        }
+        
+        await updateDoc(entryRef, updateData);
+
         setEntries(prevEntries =>
           prevEntries.map(entry =>
-            entry.id === id ? { ...entry, paid: !entry.paid } : entry
+            entry.id === id ? { ...entry, ...updateData } : entry
           )
         );
       }
