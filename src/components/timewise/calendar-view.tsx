@@ -179,13 +179,9 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry, dele
             selected={selectedDate}
             onSelect={setSelectedDate}
             modifiers={{ scheduled: scheduledDays }}
-            modifiersStyles={{
-              scheduled: { 
-                fontWeight: 'bold',
-                backgroundColor: 'hsl(var(--accent))',
-                color: 'hsl(var(--accent-foreground))',
-                borderRadius: 'var(--radius)'
-              }
+            modifiersClassNames={{
+              today: 'bg-pink-200 rounded-md',
+              scheduled: 'bg-accent text-accent-foreground rounded-full',
             }}
             className="w-full max-w-md"
           />
