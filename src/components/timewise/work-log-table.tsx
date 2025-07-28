@@ -62,7 +62,7 @@ export default function WorkLogTable({ title, titleClassName, entries, isPaidLog
   const { toast } = useToast();
   const [isExporting, setIsExporting] = React.useState(false);
   
-  const paidTotal = isPaidLog ? entries.reduce((sum, entry) => sum + entry.earnings, 0) : 0;
+  const periodTotal = entries.reduce((sum, entry) => sum + entry.earnings, 0);
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -101,10 +101,10 @@ export default function WorkLogTable({ title, titleClassName, entries, isPaidLog
             </Button>
           )}
         </div>
-        {isPaidLog && (
-            <div className="text-sm opacity-90">
-                {entries.length} entries • ${paidTotal.toFixed(2)} total
-            </div>
+        {entries.length > 0 && (
+          <div className="text-sm opacity-90">
+            {isPaidLog ? `Period Total: $${periodTotal.toFixed(2)}` : `${entries.length} entries`}
+          </div>
         )}
       </CardHeader>
       <CardContent className="p-0">
