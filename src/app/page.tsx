@@ -5,16 +5,23 @@ import PasswordScreen from '@/components/auth/password-screen';
 import MainApp from '@/components/timewise/main-app';
 
 export default function Home() {
-  const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | undefined>(undefined);
+  // Default to false, and update only on the client.
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  // Add a loading state to prevent flash of content
+  const [isLoading, setIsLoading] = React.useState(true);
+
 
   React.useEffect(() => {
-    // This code now runs only on the client, after the component has mounted.
+    // This effect runs only on the client, after the component has mounted.
     try {
       const authStatus = sessionStorage.getItem('timewise-auth') === 'true';
       setIsAuthenticated(authStatus);
     } catch (error) {
       console.warn('Could not read from sessionStorage:', error);
+      // Ensure we are in a known state if sessionStorage fails
       setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -27,11 +34,11 @@ export default function Home() {
     setIsAuthenticated(true);
   };
 
-  // Display a loading state until authentication status is determined from sessionStorage
-  if (isAuthenticated === undefined) {
+  // Display a loading indicator while we check the client-side session.
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen w-screen">
-        {/* You can add a loading spinner here */}
+        {/* You can replace this with a more sophisticated loading spinner */}
       </div>
     );
   }
