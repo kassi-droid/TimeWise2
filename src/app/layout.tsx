@@ -1,4 +1,4 @@
-import type {Metadata} from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
@@ -6,12 +6,15 @@ export const metadata: Metadata = {
   title: 'TimeWise',
   description: 'Track your work hours and earnings with ease.',
   manifest: '/manifest.json',
-  themeColor: '#D0BFFF',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'TimeWise',
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#D0BFFF',
 };
 
 export default function RootLayout({

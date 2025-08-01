@@ -5,11 +5,8 @@ import PasswordScreen from '@/components/auth/password-screen';
 import MainApp from '@/components/timewise/main-app';
 
 export default function Home() {
-  // Default to false, and update only on the client.
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
-  // Add a loading state to prevent flash of content
-  const [isLoading, setIsLoading] = React.useState(true);
-
+  // Default to null to indicate that we haven't checked the auth status yet.
+  const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);
 
   React.useEffect(() => {
     // This effect runs only on the client, after the component has mounted.
@@ -20,8 +17,6 @@ export default function Home() {
       console.warn('Could not read from sessionStorage:', error);
       // Ensure we are in a known state if sessionStorage fails
       setIsAuthenticated(false);
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
@@ -34,8 +29,8 @@ export default function Home() {
     setIsAuthenticated(true);
   };
 
-  // Display a loading indicator while we check the client-side session.
-  if (isLoading) {
+  // While isAuthenticated is null, we are still loading/checking the client-side session.
+  if (isAuthenticated === null) {
     return (
       <div className="flex items-center justify-center h-screen w-screen">
         {/* You can replace this with a more sophisticated loading spinner */}
