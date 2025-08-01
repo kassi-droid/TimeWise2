@@ -6,7 +6,7 @@ import type { WorkEntry } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Trash2, Check, Clock, FileUp, Loader2 } from 'lucide-react';
+import { Trash2, Check, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -19,8 +19,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useToast } from '@/hooks/use-toast';
-import { exportToSheet } from '@/ai/flows/export-to-sheet-flow';
 
 interface WorkLogTableProps {
   title: string;
@@ -59,47 +57,13 @@ const formatTime = (timeStr: string) => {
 
 export default function WorkLogTable({ title, titleClassName, entries, isPaidLog, deleteEntry, togglePaidStatus, emptyState }: WorkLogTableProps) {
   
-  const { toast } = useToast();
-  const [isExporting, setIsExporting] = React.useState(false);
-  
   const periodTotal = entries.reduce((sum, entry) => sum + entry.earnings, 0);
 
-  const handleExport = async () => {
-    setIsExporting(true);
-    try {
-      const result = await exportToSheet(entries);
-      if (result.spreadsheetUrl) {
-        toast({
-          title: "Export Successful!",
-          description: "Paid entries exported to Google Sheets.",
-        });
-        window.open(result.spreadsheetUrl, '_blank');
-      } else {
-        throw new Error("Export failed to return a URL.");
-      }
-    } catch (error) {
-      console.error("Export failed:", error);
-      toast({
-        title: "Export Failed",
-        description: "Could not export data. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsExporting(false);
-    }
-  };
-  
   return (
     <Card className="shadow-xl bg-white/95 backdrop-blur-md overflow-hidden">
       <CardHeader className={cn("p-4 flex-row items-center justify-between", titleClassName)}>
         <div className="flex items-center gap-4">
           <CardTitle className="font-headline text-lg">{title}</CardTitle>
-          {isPaidLog && entries.length > 0 && (
-             <Button size="sm" variant="secondary" onClick={handleExport} disabled={isExporting}>
-              {isExporting ? <Loader2 className="animate-spin" /> : <FileUp />}
-              Export
-            </Button>
-          )}
         </div>
         {entries.length > 0 && (
           <div className="text-sm opacity-90">
