@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from 'react';
@@ -5,19 +6,21 @@ import PasswordScreen from '@/components/auth/password-screen';
 import MainApp from '@/components/timewise/main-app';
 
 export default function Home() {
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
-  const [isClient, setIsClient] = React.useState(false);
+  // Initialize state to `null` to represent the initial, undetermined state on the server.
+  const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);
 
+  // This effect runs only on the client-side after hydration.
   React.useEffect(() => {
-    setIsClient(true);
     try {
+      // Check for the authentication status in sessionStorage.
       const authStatus = sessionStorage.getItem('timewise-auth') === 'true';
       setIsAuthenticated(authStatus);
     } catch (error) {
+      // If sessionStorage is not available or fails, default to not authenticated.
       console.warn('Could not read from sessionStorage:', error);
       setIsAuthenticated(false);
     }
-  }, []);
+  }, []); // The empty dependency array ensures this runs only once on mount.
 
   const handleUnlock = () => {
     try {
@@ -28,10 +31,12 @@ export default function Home() {
     setIsAuthenticated(true);
   };
 
-  if (!isClient) {
+  // On the server, and during the initial client render before the effect runs,
+  // `isAuthenticated` will be `null`. We render a loading state to prevent hydration mismatches.
+  if (isAuthenticated === null) {
     return (
       <div className="flex items-center justify-center h-screen w-screen">
-        {/* Render a loading/blank state on the server to avoid hydration errors */}
+        {/* This blank state prevents server-client mismatch errors */}
       </div>
     );
   }
