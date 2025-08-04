@@ -1,7 +1,7 @@
 "use client";
 
 import type { WorkEntry } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Clock, BarChart3, DollarSign } from 'lucide-react';
 
 interface StatsCardsProps {
@@ -11,14 +11,14 @@ interface StatsCardsProps {
 export default function StatsCards({ entries }: StatsCardsProps) {
   const stats = entries.reduce(
     (acc, entry) => {
-      acc.totalHours += entry.workHours;
       if (!entry.paid) {
+        acc.pendingHours += entry.workHours;
         acc.unpaidEarnings += entry.earnings;
       }
       acc.totalRate += entry.hourlyRate;
       return acc;
     },
-    { totalHours: 0, unpaidEarnings: 0, totalRate: 0 }
+    { pendingHours: 0, unpaidEarnings: 0, totalRate: 0 }
   );
 
   const avgRate = entries.length > 0 ? stats.totalRate / entries.length : 0;
@@ -26,8 +26,8 @@ export default function StatsCards({ entries }: StatsCardsProps) {
   const statItems = [
     {
       icon: <Clock className="w-8 h-8 text-blue-500" />,
-      label: 'Total Hours',
-      value: `${stats.totalHours.toFixed(1)}h`,
+      label: 'Pending Hours',
+      value: `${stats.pendingHours.toFixed(1)}h`,
       color: 'text-blue-600',
     },
     {
