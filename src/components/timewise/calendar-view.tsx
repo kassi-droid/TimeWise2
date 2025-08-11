@@ -25,6 +25,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import type { ScheduledEntry } from '@/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface CalendarViewProps {
   scheduledEntries: ScheduledEntry[];
@@ -34,12 +35,30 @@ interface CalendarViewProps {
 
 const scheduleFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
+  otherTitle: z.string().optional(),
   date: z.string().min(1, 'Date is required'),
   startTime: z.string().min(1, 'Start time is required'),
   endTime: z.string().min(1, 'End time is required'),
+}).refine(data => {
+    if (data.title === 'Other') {
+        return !!data.otherTitle && data.otherTitle.length > 0;
+    }
+    return true;
+}, {
+    message: 'Please specify the title',
+    path: ['otherTitle'],
 });
 
 type ScheduleFormValues = z.infer<typeof scheduleFormSchema>;
+
+const defaultJobTitles = [
+  "Babysitting Kennedy",
+  "Work for Mom",
+  "Miss Sharon",
+  "Mamaw",
+];
+
+const JOB_TITLES_STORAGE_KEY = 'timewise-jobTitles';
 
 const formatTime = (timeStr: string) => {
     if (!timeStr) return '';
@@ -52,16 +71,40 @@ const formatTime = (timeStr: string) => {
 
 export default function CalendarView({ scheduledEntries, addScheduledEntry, deleteScheduledEntry }: CalendarViewProps) {
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date());
+  const [jobTitleOptions, setJobTitleOptions] = React.useState(defaultJobTitles);
+  const [isOtherSelected, setIsOtherSelected] = React.useState(false);
 
   const form = useForm<ScheduleFormValues>({
     resolver: zodResolver(scheduleFormSchema),
     defaultValues: {
-      title: 'Work Shift',
+      title: '',
+      otherTitle: '',
       date: formatDate(new Date(), 'yyyy-MM-dd'),
       startTime: '',
       endTime: '',
     },
   });
+
+  React.useEffect(() => {
+    try {
+        const storedTitles = localStorage.getItem(JOB_TITLES_STORAGE_KEY);
+        if (storedTitles) {
+            setJobTitleOptions(JSON.parse(storedTitles));
+        } else {
+            setJobTitleOptions(defaultJobTitles);
+        }
+    } catch (error) {
+        console.warn('Could not read job titles from localStorage:', error);
+        setJobTitleOptions(defaultJobTitles);
+    }
+  }, []);
+
+  const selectedTitle = form.watch('title');
+
+  React.useEffect(() => {
+      setIsOtherSelected(selectedTitle === 'Other');
+  }, [selectedTitle]);
+
 
   React.useEffect(() => {
     if (selectedDate) {
@@ -95,11 +138,34 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry, dele
   }, [scheduledEntries]);
 
   const onSubmit = (values: ScheduleFormValues) => {
-    addScheduledEntry(values);
+    let finalTitle = values.title;
+
+    if (values.title === 'Other' && values.otherTitle) {
+      finalTitle = values.otherTitle;
+      if (!jobTitleOptions.includes(finalTitle)) {
+        const updatedTitles = [...jobTitleOptions, finalTitle];
+        setJobTitleOptions(updatedTitles);
+        try {
+            localStorage.setItem(JOB_TITLES_STORAGE_KEY, JSON.stringify(updatedTitles));
+        } catch (error) {
+            console.warn('Could not save job titles to localStorage:', error);
+        }
+      }
+    }
+
+    addScheduledEntry({
+      title: finalTitle,
+      date: values.date,
+      startTime: values.startTime,
+      endTime: values.endTime,
+    });
+    
     form.reset({
       ...values,
       startTime: '',
       endTime: '',
+      otherTitle: '',
+      title: finalTitle !== 'Other' ? finalTitle : '',
     });
   };
 
@@ -118,13 +184,40 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry, dele
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Title</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="e.g., Work Shift" className="text-base" />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="text-base">
+                          <SelectValue placeholder="Select a job" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {jobTitleOptions.map(title => (
+                          <SelectItem key={title} value={title}>{title}</SelectItem>
+                        ))}
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {isOtherSelected && (
+                <FormField
+                    control={form.control}
+                    name="otherTitle"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Custom Title</FormLabel>
+                        <FormControl>
+                            <Input {...field} placeholder="Enter the job title" className="text-base" autoFocus/>
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+              )}
+
               <FormField
                 control={form.control}
                 name="date"
