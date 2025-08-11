@@ -282,8 +282,6 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry, dele
         </CardContent>
       </Card>
 
-      <GanttChartView scheduledEntries={scheduledEntries} selectedDate={selectedDate} />
-      
       {selectedDate && selectedDayEntries.length > 0 && (
         <Card className="shadow-xl bg-white/95 backdrop-blur-md">
             <CardHeader>
@@ -330,6 +328,8 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry, dele
             </CardContent>
         </Card>
       )}
+
+      <GanttChartView scheduledEntries={scheduledEntries} selectedDate={selectedDate} />
 
       {allScheduledEntriesSorted.length > 0 && (
         <Card className="shadow-xl bg-white/95 backdrop-blur-md">
