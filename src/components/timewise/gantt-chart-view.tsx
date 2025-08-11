@@ -38,8 +38,10 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
         [scheduledEntries]
     );
 
+    const purpleScheme = ['#8A2BE2', ...schemeTableau10.filter(c => c !== '#8A2BE2')];
+
     const colorScale = React.useMemo(() => 
-        scaleOrdinal(schemeTableau10).domain(allJobTitles),
+        scaleOrdinal(purpleScheme).domain(allJobTitles),
         [allJobTitles]
     );
 
