@@ -45,16 +45,18 @@ const timeToMinutes = (timeStr: string): number => {
     return hours * 60 + minutes;
 };
 
-const jobTitleOptions = [
+const defaultJobTitles = [
   "Babysitting Kennedy",
   "Work for Mom",
   "Miss Sharon",
   "Mamaw",
-  "Other"
 ];
+
+const JOB_TITLES_STORAGE_KEY = 'timewise-jobTitles';
 
 export default function AddEntryForm({ onAddEntry, entries }: AddEntryFormProps) {
     const [isOtherSelected, setIsOtherSelected] = useState(false);
+    const [jobTitleOptions, setJobTitleOptions] = useState(defaultJobTitles);
     
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -69,176 +71,205 @@ export default function AddEntryForm({ onAddEntry, entries }: AddEntryFormProps)
         },
     });
 
+    useEffect(() => {
+        try {
+            const storedTitles = localStorage.getItem(JOB_TITLES_STORAGE_KEY);
+            if (storedTitles) {
+                setJobTitleOptions(JSON.parse(storedTitles));
+            } else {
+                setJobTitleOptions(defaultJobTitles);
+            }
+        } catch (error) {
+            console.warn('Could not read job titles from localStorage:', error);
+            setJobTitleOptions(defaultJobTitles);
+        }
+    }, []);
+
     const selectedJobTitle = form.watch('jobTitle');
 
     useEffect(() => {
         setIsOtherSelected(selectedJobTitle === 'Other');
     }, [selectedJobTitle]);
 
-  useEffect(() => {
-    const savedRate = localStorage.getItem('timewise-defaultHourlyRate');
-    if (savedRate) {
-      form.setValue('hourlyRate', parseFloat(savedRate));
-    }
-    const savedTitle = localStorage.getItem('timewise-defaultJobTitle');
-    if (savedTitle && jobTitleOptions.includes(savedTitle)) {
-      form.setValue('jobTitle', savedTitle);
-    }
-  }, [form]);
+    useEffect(() => {
+        const savedRate = localStorage.getItem('timewise-defaultHourlyRate');
+        if (savedRate) {
+            form.setValue('hourlyRate', parseFloat(savedRate));
+        }
+        const savedTitle = localStorage.getItem('timewise-defaultJobTitle');
+        if (savedTitle && (jobTitleOptions.includes(savedTitle) || defaultJobTitles.includes(savedTitle))) {
+            form.setValue('jobTitle', savedTitle);
+        }
+    }, [form, jobTitleOptions]);
 
-  const onSubmit = (values: FormValues) => {
-    const finalJobTitle = values.jobTitle === 'Other' ? values.otherJobTitle! : values.jobTitle;
+    const onSubmit = (values: FormValues) => {
+        let finalJobTitle = values.jobTitle;
 
-    localStorage.setItem('timewise-defaultHourlyRate', values.hourlyRate.toString());
-    if (values.jobTitle !== 'Other') {
-        localStorage.setItem('timewise-defaultJobTitle', values.jobTitle);
-    }
-    
-    const startMinutes = timeToMinutes(values.startTime);
-    const endMinutes = timeToMinutes(values.endTime);
+        if (values.jobTitle === 'Other' && values.otherJobTitle) {
+            finalJobTitle = values.otherJobTitle;
+            if (!jobTitleOptions.includes(finalJobTitle)) {
+                const updatedTitles = [...jobTitleOptions, finalJobTitle];
+                setJobTitleOptions(updatedTitles);
+                try {
+                    localStorage.setItem(JOB_TITLES_STORAGE_KEY, JSON.stringify(updatedTitles));
+                } catch (error) {
+                    console.warn('Could not save job titles to localStorage:', error);
+                }
+            }
+        }
 
-    let totalMinutes = endMinutes - startMinutes;
-    if (totalMinutes < 0) totalMinutes += 24 * 60; // Handles overnight shifts
+        localStorage.setItem('timewise-defaultHourlyRate', values.hourlyRate.toString());
+        if (values.jobTitle !== 'Other') {
+            localStorage.setItem('timewise-defaultJobTitle', values.jobTitle);
+        }
+        
+        const startMinutes = timeToMinutes(values.startTime);
+        const endMinutes = timeToMinutes(values.endTime);
 
-    const workMinutes = totalMinutes - values.lunchBreak;
-    const workHours = workMinutes / 60;
-    const earnings = workHours * values.hourlyRate;
+        let totalMinutes = endMinutes - startMinutes;
+        if (totalMinutes < 0) totalMinutes += 24 * 60; // Handles overnight shifts
 
-    onAddEntry({ ...values, jobTitle: finalJobTitle, workHours, earnings });
+        const workMinutes = totalMinutes - values.lunchBreak;
+        const workHours = workMinutes / 60;
+        const earnings = workHours * values.hourlyRate;
 
-    form.reset({
-      ...form.getValues(),
-      startTime: '',
-      endTime: '',
-      otherJobTitle: '',
-    });
-  };
+        onAddEntry({ ...values, jobTitle: finalJobTitle, workHours, earnings });
 
-  return (
-    <div className="p-4 animate-slide-up">
-      <Card className="bg-white/95 backdrop-blur-md shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline text-xl">📝 Add Work Entry</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="jobTitle"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>💼 Job Title</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="text-base">
-                          <SelectValue placeholder="Select a job" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {jobTitleOptions.map(title => (
-                          <SelectItem key={title} value={title}>{title}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+        form.reset({
+            ...form.getValues(),
+            startTime: '',
+            endTime: '',
+            otherJobTitle: '',
+            jobTitle: finalJobTitle !== 'Other' ? finalJobTitle : '',
+        });
+    };
 
-              {isOtherSelected && (
-                 <FormField
+    return (
+        <div className="p-4 animate-slide-up">
+        <Card className="bg-white/95 backdrop-blur-md shadow-xl">
+            <CardHeader>
+            <CardTitle className="font-headline text-xl">📝 Add Work Entry</CardTitle>
+            </CardHeader>
+            <CardContent>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
                     control={form.control}
-                    name="otherJobTitle"
+                    name="jobTitle"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>💼 Job Title</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                        <FormControl>
+                            <SelectTrigger className="text-base">
+                            <SelectValue placeholder="Select a job" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {jobTitleOptions.map(title => (
+                            <SelectItem key={title} value={title}>{title}</SelectItem>
+                            ))}
+                            <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+
+                {isOtherSelected && (
+                    <FormField
+                        control={form.control}
+                        name="otherJobTitle"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Custom Job Title</FormLabel>
+                            <FormControl>
+                                <Input {...field} placeholder="Enter the job title" className="text-base" autoFocus/>
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
+
+                <FormField
+                    control={form.control}
+                    name="date"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>📅 Date</FormLabel>
+                        <FormControl>
+                        <Input type="date" {...field} className="text-base" />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                    control={form.control}
+                    name="startTime"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Custom Job Title</FormLabel>
+                        <FormLabel>🌅 Start Time</FormLabel>
                         <FormControl>
-                            <Input {...field} placeholder="Enter the job title" className="text-base" />
+                            <Input type="time" {...field} className="text-base" />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
-                />
-              )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="endTime"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>🌇 End Time</FormLabel>
+                        <FormControl>
+                            <Input type="time" {...field} className="text-base" />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
 
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>📅 Date</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} className="text-base" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="startTime"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>🌅 Start Time</FormLabel>
-                      <FormControl>
-                        <Input type="time" {...field} className="text-base" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="endTime"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>🌇 End Time</FormLabel>
-                      <FormControl>
-                        <Input type="time" {...field} className="text-base" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="lunchBreak"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>🍽️ Lunch (min)</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} placeholder="30" className="text-base" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="hourlyRate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>💰 Rate ($)</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.01" {...field} placeholder="15.00" className="text-base" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <Button type="submit" className="w-full text-lg py-6" size="lg">Add Entry</Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
-  );
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                    control={form.control}
+                    name="lunchBreak"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>🍽️ Lunch (min)</FormLabel>
+                        <FormControl>
+                            <Input type="number" {...field} placeholder="30" className="text-base" />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="hourlyRate"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>💰 Rate ($)</FormLabel>
+                        <FormControl>
+                            <Input type="number" step="0.01" {...field} placeholder="15.00" className="text-base" />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
+                
+                <Button type="submit" className="w-full text-lg py-6" size="lg">Add Entry</Button>
+                </form>
+            </Form>
+            </CardContent>
+        </Card>
+        </div>
+    );
 }
