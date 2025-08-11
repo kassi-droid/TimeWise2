@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import type { WorkEntry } from '@/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formSchema = z.object({
   jobTitle: z.string().min(1, 'Job title is required'),
@@ -34,6 +35,13 @@ const timeToMinutes = (timeStr: string): number => {
     return hours * 60 + minutes;
 };
 
+const jobTitleOptions = [
+  "Babysitting Kennedy",
+  "Work for Mom",
+  "Miss Sharon",
+  "Mamaw"
+];
+
 export default function AddEntryForm({ onAddEntry, entries }: AddEntryFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -46,11 +54,6 @@ export default function AddEntryForm({ onAddEntry, entries }: AddEntryFormProps)
       hourlyRate: 15.00,
     },
   });
-
-  const uniqueJobTitles = useMemo(() => {
-    const titles = entries.map(entry => entry.jobTitle);
-    return [...new Set(titles)];
-  }, [entries]);
 
   useEffect(() => {
     const savedRate = localStorage.getItem('timewise-defaultHourlyRate');
@@ -96,25 +99,27 @@ export default function AddEntryForm({ onAddEntry, entries }: AddEntryFormProps)
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
-                  control={form.control}
-                  name="jobTitle"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>💼 Job Title</FormLabel>
+                control={form.control}
+                name="jobTitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>💼 Job Title</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                       <FormControl>
-                        <div>
-                          <Input placeholder="e.g., Freelance Work" {...field} className="text-base" list="job-titles" />
-                          <datalist id="job-titles">
-                            {uniqueJobTitles.map(title => (
-                              <option key={title} value={title} />
-                            ))}
-                          </datalist>
-                        </div>
+                        <SelectTrigger className="text-base">
+                          <SelectValue placeholder="Select a job" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      <SelectContent>
+                        {jobTitleOptions.map(title => (
+                          <SelectItem key={title} value={title}>{title}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="date"
