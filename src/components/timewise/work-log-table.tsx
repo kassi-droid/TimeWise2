@@ -98,6 +98,7 @@ export default function WorkLogTable({ title, titleClassName, entries, isPaidLog
                   <TableRow key={entry.id}>
                     <TableCell>
                       <div className="font-semibold">{formatDate(entry.date)}</div>
+                      <div className="text-xs font-medium text-muted-foreground">{entry.jobTitle}</div>
                       <div className="text-xs text-muted-foreground">{formatTime(entry.startTime)} - {formatTime(entry.endTime)}</div>
                       {entry.lunchBreak > 0 && <div className="text-xs text-muted-foreground">Break: {entry.lunchBreak} min</div>}
                       <div className="text-xs text-muted-foreground">@{entry.hourlyRate.toFixed(2)}/hr</div>

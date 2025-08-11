@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import type { WorkEntry } from '@/types';
 
 const formSchema = z.object({
+  jobTitle: z.string().min(1, 'Job title is required'),
   date: z.string().min(1, 'Date is required'),
   startTime: z.string().min(1, 'Start time is required'),
   endTime: z.string().min(1, 'End time is required'),
@@ -35,6 +36,7 @@ export default function AddEntryForm({ onAddEntry }: AddEntryFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      jobTitle: '',
       date: new Date().toISOString().split('T')[0],
       startTime: '',
       endTime: '',
@@ -48,10 +50,15 @@ export default function AddEntryForm({ onAddEntry }: AddEntryFormProps) {
     if (savedRate) {
       form.setValue('hourlyRate', parseFloat(savedRate));
     }
+    const savedTitle = localStorage.getItem('timewise-defaultJobTitle');
+    if (savedTitle) {
+      form.setValue('jobTitle', savedTitle);
+    }
   }, [form]);
 
   const onSubmit = (values: FormValues) => {
     localStorage.setItem('timewise-defaultHourlyRate', values.hourlyRate.toString());
+    localStorage.setItem('timewise-defaultJobTitle', values.jobTitle);
     
     const startMinutes = timeToMinutes(values.startTime);
     const endMinutes = timeToMinutes(values.endTime);
@@ -81,6 +88,19 @@ export default function AddEntryForm({ onAddEntry }: AddEntryFormProps) {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                  control={form.control}
+                  name="jobTitle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>💼 Job Title</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Freelance Work" {...field} className="text-base" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               <FormField
                 control={form.control}
                 name="date"
