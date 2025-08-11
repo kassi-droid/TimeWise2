@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { ScheduledEntry } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import GanttChartView from './gantt-chart-view';
 
 interface CalendarViewProps {
   scheduledEntries: ScheduledEntry[];
@@ -280,6 +281,8 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry, dele
           />
         </CardContent>
       </Card>
+
+      <GanttChartView scheduledEntries={scheduledEntries} />
       
       {selectedDate && selectedDayEntries.length > 0 && (
         <Card className="shadow-xl bg-white/95 backdrop-blur-md">
@@ -357,7 +360,7 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry, dele
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>
                           This will permanently delete the scheduled shift. This action cannot be undone.
-                        </AlertDialogDescription>
+                        </d'AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
