@@ -22,21 +22,6 @@ export default function SpreadsheetView({ entries, deleteEntry, togglePaidStatus
     return dateB.getTime() - dateA.getTime();
   });
 
-  const groupedPaidEntries = paidEntries.reduce((acc, entry) => {
-    // Group by `datePaid`. If not present, use a fallback, though it should be for paid entries.
-    const paidDateKey = entry.datePaid || new Date(entry.date).toISOString().split('T')[0];
-    if (!acc[paidDateKey]) {
-      acc[paidDateKey] = [];
-    }
-    acc[paidDateKey].push(entry);
-    return acc;
-  }, {} as Record<string, WorkEntry[]>);
-
-
-  const paidPeriods = Object.entries(groupedPaidEntries).sort(([dateA], [dateB]) => {
-    return new Date(dateB).getTime() - new Date(dateA).getTime();
-  });
-  
   const groupedPendingEntries = pendingEntries.reduce((acc, entry) => {
     const jobTitle = entry.jobTitle || 'Uncategorized';
     if (!acc[jobTitle]) {
@@ -47,6 +32,35 @@ export default function SpreadsheetView({ entries, deleteEntry, togglePaidStatus
   }, {} as Record<string, WorkEntry[]>);
 
   const pendingJobs = Object.entries(groupedPendingEntries);
+  
+  const paidEntriesByJob = paidEntries.reduce((acc, entry) => {
+    const jobTitle = entry.jobTitle || 'Uncategorized';
+    if (!acc[jobTitle]) {
+      acc[jobTitle] = [];
+    }
+    acc[jobTitle].push(entry);
+    return acc;
+  }, {} as Record<string, WorkEntry[]>);
+
+  const paidJobs = Object.entries(paidEntriesByJob).map(([jobTitle, jobEntries]) => {
+    const totalEarnings = jobEntries.reduce((sum, entry) => sum + entry.earnings, 0);
+    const totalHours = jobEntries.reduce((sum, entry) => sum + entry.workHours, 0);
+    
+    const groupedByDate = jobEntries.reduce((acc, entry) => {
+      const paidDateKey = entry.datePaid || new Date(entry.date).toISOString().split('T')[0];
+      if (!acc[paidDateKey]) {
+        acc[paidDateKey] = [];
+      }
+      acc[paidDateKey].push(entry);
+      return acc;
+    }, {} as Record<string, WorkEntry[]>);
+
+    const periods = Object.entries(groupedByDate).sort(([dateA], [dateB]) => {
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
+
+    return { jobTitle, periods, totalEarnings, totalHours };
+  });
 
   return (
     <div className="p-4 space-y-6">
@@ -102,36 +116,52 @@ export default function SpreadsheetView({ entries, deleteEntry, togglePaidStatus
           <CardTitle className="font-headline text-lg">✅ Paid Work</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          {paidPeriods.length > 0 ? (
+          {paidJobs.length > 0 ? (
             <Accordion type="multiple" className="w-full">
-              {paidPeriods.map(([datePaid, periodEntries], index) => {
-                 const periodTotal = periodEntries.reduce((sum, entry) => sum + entry.earnings, 0);
-                 const periodHours = periodEntries.reduce((sum, entry) => sum + entry.workHours, 0);
-                 const paidDate = new Date(datePaid + 'T00:00:00');
-                 const formattedDate = paidDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-
-                return (
-                  <AccordionItem value={datePaid} key={datePaid} className="border-b last:border-b-0">
+              {paidJobs.map(({ jobTitle, periods, totalEarnings, totalHours }) => (
+                  <AccordionItem value={jobTitle} key={jobTitle} className="border-b last:border-b-0">
                     <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-secondary/50 text-base font-semibold">
-                      <div className="flex justify-between w-full pr-4">
-                        <span>Paid on {formattedDate}</span>
-                        <span className="text-right text-muted-foreground">
-                          ${periodTotal.toFixed(2)} ({periodHours.toFixed(1)}h)
-                        </span>
-                      </div>
+                        <div className="flex justify-between w-full pr-4">
+                            <span>{jobTitle}</span>
+                            <span className="text-right text-muted-foreground">
+                            ${totalEarnings.toFixed(2)} ({totalHours.toFixed(1)}h)
+                            </span>
+                        </div>
                     </AccordionTrigger>
-                    <AccordionContent className="p-0">
-                      <WorkLogTable
-                        entries={periodEntries}
-                        isPaidLog={true}
-                        deleteEntry={deleteEntry}
-                        togglePaidStatus={togglePaidStatus}
-                        hideHeader={true}
-                      />
+                    <AccordionContent className="p-0 bg-secondary/20">
+                      <Accordion type="multiple" className="w-full">
+                        {periods.map(([datePaid, periodEntries]) => {
+                          const periodTotal = periodEntries.reduce((sum, entry) => sum + entry.earnings, 0);
+                          const periodHours = periodEntries.reduce((sum, entry) => sum + entry.workHours, 0);
+                          const paidDate = new Date(datePaid + 'T00:00:00');
+                          const formattedDate = paidDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+                          return (
+                            <AccordionItem value={datePaid} key={datePaid} className="border-b last:border-b-0">
+                              <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-secondary/50 text-sm font-medium">
+                                <div className="flex justify-between w-full pr-4">
+                                  <span>Paid on {formattedDate}</span>
+                                  <span className="text-right text-muted-foreground">
+                                    ${periodTotal.toFixed(2)} ({periodHours.toFixed(1)}h)
+                                  </span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent className="p-0">
+                                <WorkLogTable
+                                  entries={periodEntries}
+                                  isPaidLog={true}
+                                  deleteEntry={deleteEntry}
+                                  togglePaidStatus={togglePaidStatus}
+                                  hideHeader={true}
+                                />
+                              </AccordionContent>
+                            </AccordionItem>
+                          );
+                        })}
+                      </Accordion>
                     </AccordionContent>
                   </AccordionItem>
-                );
-              })}
+              ))}
             </Accordion>
           ) : (
             <div className="text-center p-10">
