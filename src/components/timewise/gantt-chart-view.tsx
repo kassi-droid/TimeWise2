@@ -30,56 +30,58 @@ const minutesToTime = (minutes: number) => {
 
 // This component will render a single scheduled block
 const CustomBar = (props: any) => {
-    const { x, y, width, height, payload } = props;
-    
-    const entries = payload.entries;
-    if (!entries || entries.length === 0) {
-      return null;
-    }
+  const { x, y, width, height, payload, jobTitle } = props;
 
-    const yAxisDomainMinutes = [6 * 60, 22 * 60]; // 6am to 10pm
-    const totalMinutesInDomain = yAxisDomainMinutes[1] - yAxisDomainMinutes[0];
-    
-    return (
-      <g>
-        {entries.map((item: any, index: number) => {
-            const { entry, color } = item;
-            
-            const entryStart = timeToMinutes(entry.startTime);
-            const entryEnd = timeToMinutes(entry.endTime);
+  const entriesForJob = payload.entries.filter((item: any) => item.entry.title === jobTitle);
 
-            // Calculate position and height based on the chart's scale.
-            // `y` is the top of the chart area for this bar, `height` is the total height of the chart area.
-            const startRatio = (entryStart - yAxisDomainMinutes[0]) / totalMinutesInDomain;
-            const endRatio = (entryEnd - yAxisDomainMinutes[0]) / totalMinutesInDomain;
-            
-            const barY = y + (height * startRatio);
-            const barHeight = height * (endRatio - startRatio);
+  if (entriesForJob.length === 0) {
+    return null;
+  }
 
-            if (barHeight <= 0 || isNaN(barY) || isNaN(barHeight)) {
-                return null;
-            }
+  const yAxisDomainMinutes = [6 * 60, 22 * 60]; // 6am to 10pm
+  const totalMinutesInDomain = yAxisDomainMinutes[1] - yAxisDomainMinutes[0];
 
-            return (
-                <rect 
-                    key={index}
-                    x={x} 
-                    y={barY}
-                    width={width} 
-                    height={barHeight}
-                    fill={color} 
-                />
-            );
-        })}
-      </g>
-    );
+  return (
+    <g>
+      {entriesForJob.map((item: any, index: number) => {
+        const { entry, color } = item;
+        const entryStart = timeToMinutes(entry.startTime);
+        const entryEnd = timeToMinutes(entry.endTime);
+
+        if (entryStart < yAxisDomainMinutes[0] || entryEnd > yAxisDomainMinutes[1]) {
+          return null;
+        }
+
+        const startRatio = (entryStart - yAxisDomainMinutes[0]) / totalMinutesInDomain;
+        const endRatio = (entryEnd - yAxisDomainMinutes[0]) / totalMinutesInDomain;
+
+        const barY = y + height * startRatio;
+        const barHeight = height * (endRatio - startRatio);
+
+        if (barHeight <= 0 || isNaN(barY) || isNaN(barHeight)) {
+          return null;
+        }
+
+        return (
+          <rect
+            key={index}
+            x={x}
+            y={barY}
+            width={width}
+            height={barHeight}
+            fill={color}
+          />
+        );
+      })}
+    </g>
+  );
 };
 
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length && payload[0].payload.entries) {
         const { entries } = payload[0].payload;
-        // Tooltip can't easily determine which specific bar is hovered in a group
-        // So we just show all entries for that day.
+        if (entries.length === 0) return null;
+        
         return (
             <div className="bg-background p-2 border rounded-md shadow-lg">
                 <p className="font-bold mb-2">{label}</p>
@@ -151,7 +153,7 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
               dataKey="name" 
               tickLine={false}
               axisLine={false}
-              scale="band" // Important for categorical data
+              scale="band"
             />
             <YAxis
               type="number"
@@ -177,7 +179,14 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
               )}
               wrapperStyle={{ bottom: -5 }}
             />
-            <Bar dataKey="entries" shape={<CustomBar />} />
+            {allJobTitles.map((jobTitle) => (
+              <Bar
+                key={jobTitle}
+                dataKey="entries"
+                stackId="a"
+                shape={<CustomBar jobTitle={jobTitle} />}
+              />
+            ))}
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
