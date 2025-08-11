@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useEffect, useState } from 'react';
+import { Trash2 } from 'lucide-react';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,18 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import type { WorkEntry } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 
 const formSchema = z.object({
   jobTitle: z.string().min(1, 'Job title is required'),
@@ -102,6 +115,20 @@ export default function AddEntryForm({ onAddEntry, entries }: AddEntryFormProps)
         }
     }, [form, jobTitleOptions]);
 
+    const handleJobTitleDelete = (titleToDelete: string) => {
+        const updatedTitles = jobTitleOptions.filter(title => title !== titleToDelete);
+        setJobTitleOptions(updatedTitles);
+        try {
+            localStorage.setItem(JOB_TITLES_STORAGE_KEY, JSON.stringify(updatedTitles));
+        } catch (error) {
+            console.warn('Could not save updated job titles to localStorage:', error);
+        }
+        // If the deleted title was the currently selected one, clear the selection
+        if (form.getValues('jobTitle') === titleToDelete) {
+            form.setValue('jobTitle', '');
+        }
+    };
+
     const onSubmit = (values: FormValues) => {
         let finalJobTitle = values.jobTitle;
 
@@ -167,7 +194,35 @@ export default function AddEntryForm({ onAddEntry, entries }: AddEntryFormProps)
                         </FormControl>
                         <SelectContent>
                             {jobTitleOptions.map(title => (
-                            <SelectItem key={title} value={title}>{title}</SelectItem>
+                                <div key={title} className="flex items-center justify-between pr-2">
+                                    <SelectItem value={title} className="flex-grow">{title}</SelectItem>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8 ml-2 shrink-0 text-muted-foreground hover:text-destructive"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <Trash2 size={16} />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            This will permanently delete the job title "{title}". This action cannot be undone.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction onClick={(e) => {e.stopPropagation(); handleJobTitleDelete(title)}}>
+                                            Delete
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
                             ))}
                             <SelectItem value="Other">Other</SelectItem>
                         </SelectContent>
