@@ -30,15 +30,15 @@ const minutesToTime = (minutes: number) => {
 
 // This component will render a single scheduled block
 const CustomBar = (props: any) => {
-    const { x, y, width, payload } = props;
+    const { x, y, width, height, payload } = props;
     
-    // In this setup, `payload.entries` is the array of entries for the day
     const entries = payload.entries;
     if (!entries || entries.length === 0) {
       return null;
     }
 
-    const yAxisDomain = [6 * 60, 22 * 60]; // 6am to 10pm in minutes
+    const yAxisDomainMinutes = [6 * 60, 22 * 60]; // 6am to 10pm
+    const totalMinutesInDomain = yAxisDomainMinutes[1] - yAxisDomainMinutes[0];
     
     return (
       <g>
@@ -48,13 +48,15 @@ const CustomBar = (props: any) => {
             const entryStart = timeToMinutes(entry.startTime);
             const entryEnd = timeToMinutes(entry.endTime);
 
-            // Using the y-scale function passed implicitly via the y prop
-            const barY = y(entryEnd); // recharts y is top-down
-            const barEndY = y(entryStart);
-            const barHeight = Math.abs(barY - barEndY);
+            // Calculate position and height based on the chart's scale.
+            // `y` is the top of the chart area for this bar, `height` is the total height of the chart area.
+            const startRatio = (entryStart - yAxisDomainMinutes[0]) / totalMinutesInDomain;
+            const endRatio = (entryEnd - yAxisDomainMinutes[0]) / totalMinutesInDomain;
+            
+            const barY = y + (height * startRatio);
+            const barHeight = height * (endRatio - startRatio);
 
-            // Only render if the entry is within the visible time range
-            if (entryEnd < yAxisDomain[0] || entryStart > yAxisDomain[1] || barHeight <= 0) {
+            if (barHeight <= 0 || isNaN(barY) || isNaN(barHeight)) {
                 return null;
             }
 
