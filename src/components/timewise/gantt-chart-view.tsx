@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Rectangle } from 'recharts';
-import { startOfWeek, endOfWeek, eachDayOfInterval, format } from 'date-fns';
+import { startOfWeek, endOfWeek, eachDayOfInterval, format, parseISO } from 'date-fns';
 import { scaleOrdinal } from 'd3-scale';
 import { schemeTableau10 } from 'd3-scale-chromatic';
 
@@ -28,81 +28,107 @@ const minutesToTime = (minutes: number) => {
     return `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`;
 };
 
-export default function GanttChartView({ scheduledEntries }: GanttChartViewProps) {
-  const chartData = React.useMemo(() => {
-    const today = new Date();
-    const start = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
-    const end = endOfWeek(today, { weekStartsOn: 0 }); // Saturday
-    const weekDays = eachDayOfInterval({ start, end });
+// This component will render a single scheduled block
+const CustomBar = (props: any) => {
+    const { x, y, width, height, payload } = props;
+    const { entry, color } = payload;
+    
+    if (!entry) return null;
 
-    return weekDays.map(day => {
-      const dateStr = format(day, 'yyyy-MM-dd');
-      const dayEntries = scheduledEntries
-        .filter(entry => entry.date === dateStr)
-        .map((entry, index) => ({
-          ...entry,
-          timeRange: [timeToMinutes(entry.startTime), timeToMinutes(entry.endTime)],
-          y: timeToMinutes(entry.startTime),
-          height: timeToMinutes(entry.endTime) - timeToMinutes(entry.startTime),
-          // Add a dynamic key for Recharts to treat it as a separate series
-          [`entry${index}`]: [timeToMinutes(entry.startTime), timeToMinutes(entry.endTime) - timeToMinutes(entry.startTime)],
-        }));
-      
-      const dayData: { name: string, [key: string]: any } = { name: format(day, 'EEE') };
-      dayEntries.forEach((entry, index) => {
-        dayData[`entry${index}`] = entry[`entry${index}`];
-        dayData[`entry${index}_title`] = entry.title;
-      });
-      return dayData;
-    });
+    // We need to calculate the y and height based on the entry's time
+    const yAxisDomain = [6 * 60, 22 * 60]; // 6am to 10pm in minutes
+    const yAxisHeight = y.range[0] - y.range[1]; // The pixel height of the y-axis
 
-  }, [scheduledEntries]);
-  
-  const allJobTitles = React.useMemo(() => 
-    Array.from(new Set(scheduledEntries.map(e => e.title))), 
-  [scheduledEntries]);
+    const entryStart = timeToMinutes(entry.startTime);
+    const entryEnd = timeToMinutes(entry.endTime);
+    
+    // Only render if the entry is within the visible time range
+    if (entryEnd < yAxisDomain[0] || entryStart > yAxisDomain[1]) {
+        return null;
+    }
 
-  const colorScale = React.useMemo(() => 
-    scaleOrdinal(schemeTableau10).domain(allJobTitles),
-  [allJobTitles]);
-  
-  const maxEntriesPerDay = React.useMemo(() => 
-    chartData.reduce((max, day) => Math.max(max, Object.keys(day).filter(k => k.startsWith('entry')).length / 2), 0),
-  [chartData]);
+    const startPos = ((entryStart - yAxisDomain[0]) / (yAxisDomain[1] - yAxisDomain[0])) * yAxisHeight;
+    const endPos = ((entryEnd - yAxisDomain[0]) / (yAxisDomain[1] - yAxisDomain[0])) * yAxisHeight;
 
+    const barY = y.range[1] + startPos;
+    const barHeight = Math.max(1, endPos - startPos); // Min height of 1px
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0];
-      const titleKey = `${data.dataKey}_title`;
-      const title = data.payload[titleKey];
-      const [start, duration] = data.value;
-      const end = start + duration;
+    return <Rectangle x={x} y={barY} width={width} height={barHeight} fill={color} />;
+};
 
-      return (
-        <div className="bg-background p-2 border rounded-md shadow-lg">
-          <p className="font-bold">{title}</p>
-          <p className="text-sm text-muted-foreground">{`${minutesToTime(start)} - ${minutesToTime(end)}`}</p>
-        </div>
-      );
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length && payload[0].payload.entry) {
+        const { entry } = payload[0].payload;
+        return (
+            <div className="bg-background p-2 border rounded-md shadow-lg">
+                <p className="font-bold">{entry.title}</p>
+                <p className="text-sm text-muted-foreground">{`${minutesToTime(timeToMinutes(entry.startTime))} - ${minutesToTime(timeToMinutes(entry.endTime))}`}</p>
+            </div>
+        );
     }
     return null;
-  };
+};
 
-  const yTicks = Array.from({ length: 17 }, (_, i) => (i + 6) * 60); // 6 AM to 10 PM
-  const yTickFormatter = (value: number) => minutesToTime(value);
 
-  const CustomBar = (props: any) => {
-    const { fill, x, y, width, height, payload, dataKey } = props;
-    if (!height || height <= 0) return null;
+export default function GanttChartView({ scheduledEntries }: GanttChartViewProps) {
     
-    const titleKey = `${dataKey}_title`;
-    const title = payload[titleKey];
-    const barColor = colorScale(title);
+    const allJobTitles = React.useMemo(() => 
+        Array.from(new Set(scheduledEntries.map(e => e.title))), 
+    [scheduledEntries]);
 
-    return <Rectangle {...props} fill={barColor} />;
-  };
+    const colorScale = React.useMemo(() => 
+        scaleOrdinal(schemeTableau10).domain(allJobTitles),
+    [allJobTitles]);
 
+    const chartData = React.useMemo(() => {
+        const today = new Date();
+        const start = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
+        const end = endOfWeek(today, { weekStartsOn: 0 }); // Saturday
+        const weekDays = eachDayOfInterval({ start, end });
+
+        let flatData = scheduledEntries.map(entry => ({
+            ...entry,
+            dateObj: parseISO(entry.date + 'T00:00:00'),
+            day: format(parseISO(entry.date + 'T00:00:00'), 'EEE'),
+            color: colorScale(entry.title),
+        }));
+
+        return weekDays.map(day => {
+            const dateStr = format(day, 'yyyy-MM-dd');
+            const dayEntries = flatData.filter(entry => entry.date === dateStr);
+            
+            // Recharts needs a placeholder value to render the bar cell.
+            // We pass the actual entry data in the payload to the custom shape.
+            return {
+                name: format(day, 'EEE'),
+                // We map each entry to its own object so recharts can render a bar for each
+                ...dayEntries.map((entry, i) => ({ [`entry${i}`]: { entry: entry, color: entry.color }}))
+                               .reduce((acc, val) => ({ ...acc, ...val }), {})
+            };
+        });
+    }, [scheduledEntries, colorScale]);
+
+    const bars = React.useMemo(() => {
+        if (!chartData || chartData.length === 0) return [];
+        const maxEntriesPerDay = chartData.reduce((max, day) => {
+            return Math.max(max, Object.keys(day).filter(k => k.startsWith('entry')).length);
+        }, 0);
+        
+        return Array.from({ length: maxEntriesPerDay }).map((_, i) => (
+            <Bar
+                key={`entry${i}`}
+                dataKey={`entry${i}`}
+                shape={<CustomBar />}
+                // A dummy stackId to allow multiple bars per day.
+                // But the custom shape handles absolute positioning, so they won't actually stack.
+                stackId="a"
+            >
+            </Bar>
+        ));
+    }, [chartData]);
+    
+    const yTicks = Array.from({ length: 17 }, (_, i) => (i + 6) * 60); // 6 AM to 10 PM
+    const yTickFormatter = (value: number) => minutesToTime(value);
 
   return (
     <Card className="shadow-xl bg-white/95 backdrop-blur-md">
@@ -121,6 +147,7 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
               dataKey="name" 
               tickLine={false}
               axisLine={false}
+              scale="band" // Important for categorical data
             />
             <YAxis
               type="number"
@@ -146,16 +173,7 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
               )}
               wrapperStyle={{ bottom: -5 }}
             />
-            {
-              Array.from({ length: maxEntriesPerDay }).map((_, index) => (
-                 <Bar 
-                  key={`bar-${index}`} 
-                  dataKey={`entry${index}`} 
-                  stackId="a"
-                  shape={<CustomBar />}
-                 />
-              ))
-            }
+            {bars}
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
