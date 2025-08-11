@@ -32,24 +32,55 @@ export default function SpreadsheetView({ entries, deleteEntry, togglePaidStatus
   const paidPeriods = Object.entries(groupedPaidEntries).sort(([dateA], [dateB]) => {
     return new Date(dateB).getTime() - new Date(dateA).getTime();
   });
+  
+  const groupedPendingEntries = pendingEntries.reduce((acc, entry) => {
+    const jobTitle = entry.jobTitle || 'Uncategorized';
+    if (!acc[jobTitle]) {
+      acc[jobTitle] = [];
+    }
+    acc[jobTitle].push(entry);
+    return acc;
+  }, {} as Record<string, WorkEntry[]>);
+
+  const pendingJobs = Object.entries(groupedPendingEntries);
 
   return (
     <div className="p-4 space-y-6">
       <StatsCards entries={entries} />
       
-      <WorkLogTable
-        title="⏳ Pending Work Log"
-        titleClassName="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-        entries={pendingEntries}
-        isPaidLog={false}
-        deleteEntry={deleteEntry}
-        togglePaidStatus={togglePaidStatus}
-        emptyState={{
-            icon: "⏳",
-            message: "No pending entries",
-            description: "All caught up!",
-        }}
-      />
+      {pendingJobs.length > 0 ? (
+        pendingJobs.map(([jobTitle, jobEntries]) => (
+           <WorkLogTable
+            key={jobTitle}
+            title={`⏳ ${jobTitle}`}
+            titleClassName="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+            entries={jobEntries}
+            isPaidLog={false}
+            deleteEntry={deleteEntry}
+            togglePaidStatus={togglePaidStatus}
+            emptyState={{
+                icon: "⏳",
+                message: "No pending entries for this job",
+                description: "All caught up!",
+            }}
+          />
+        ))
+      ) : (
+        <WorkLogTable
+            title="⏳ Pending Work Log"
+            titleClassName="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+            entries={[]}
+            isPaidLog={false}
+            deleteEntry={deleteEntry}
+            togglePaidStatus={togglePaidStatus}
+            emptyState={{
+                icon: "⏳",
+                message: "No pending entries",
+                description: "All caught up!",
+            }}
+        />
+      )}
+
 
       {paidPeriods.length > 0 ? (
         paidPeriods.map(([datePaid, periodEntries], index) => (
