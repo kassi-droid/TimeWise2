@@ -12,6 +12,7 @@ import './gantt-chart-view.css';
 
 interface GanttChartViewProps {
   scheduledEntries: ScheduledEntry[];
+  selectedDate?: Date;
 }
 
 const START_HOUR = 6; // 6 AM
@@ -32,7 +33,7 @@ const minutesToTime = (minutes: number) => {
 };
 
 
-export default function GanttChartView({ scheduledEntries }: GanttChartViewProps) {
+export default function GanttChartView({ scheduledEntries, selectedDate }: GanttChartViewProps) {
     const allJobTitles = React.useMemo(() => 
         Array.from(new Set(scheduledEntries.map(e => e.title))), 
         [scheduledEntries]
@@ -45,7 +46,7 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
         [allJobTitles]
     );
 
-    const today = new Date();
+    const today = selectedDate || new Date();
     const weekStart = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
     const weekEnd = endOfWeek(today, { weekStartsOn: 0 }); // Saturday
     const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
@@ -68,11 +69,13 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
         }
         return grouped;
     }, [scheduledEntries]);
+    
+    const weekRangeString = `${format(weekStart, 'MMMM d')} - ${format(weekEnd, 'MMMM d, yyyy')}`;
 
     return (
         <Card className="shadow-xl bg-white/95 backdrop-blur-md overflow-x-auto">
             <CardHeader>
-                <CardTitle className="font-headline text-xl">🗓️ This Week's Schedule</CardTitle>
+                <CardTitle className="font-headline text-xl">🗓️ Week of {weekRangeString}</CardTitle>
             </CardHeader>
             <CardContent className="p-4">
                 <div className="gantt-chart-grid" style={{ gridTemplateRows: `40px repeat(${END_HOUR - START_HOUR}, 40px)` }}>
