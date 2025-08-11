@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Rectangle } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { startOfWeek, endOfWeek, eachDayOfInterval, format, parseISO } from 'date-fns';
 import { scaleOrdinal } from 'd3-scale';
 import { schemeTableau10 } from 'd3-scale-chromatic';
@@ -30,39 +30,65 @@ const minutesToTime = (minutes: number) => {
 
 // This component will render a single scheduled block
 const CustomBar = (props: any) => {
-    const { x, y, width, height, payload } = props;
-    const { entry, color } = payload;
+    const { x, y, width, height, payload, value } = props;
     
-    if (!entry) return null;
-
-    // We need to calculate the y and height based on the entry's time
-    const yAxisDomain = [6 * 60, 22 * 60]; // 6am to 10pm in minutes
-    const yAxisHeight = y.range[0] - y.range[1]; // The pixel height of the y-axis
-
-    const entryStart = timeToMinutes(entry.startTime);
-    const entryEnd = timeToMinutes(entry.endTime);
-    
-    // Only render if the entry is within the visible time range
-    if (entryEnd < yAxisDomain[0] || entryStart > yAxisDomain[1]) {
-        return null;
+    // In this setup, `value` is the array of entries for the day
+    if (!value || value.length === 0) {
+      return null;
     }
 
-    const startPos = ((entryStart - yAxisDomain[0]) / (yAxisDomain[1] - yAxisDomain[0])) * yAxisHeight;
-    const endPos = ((entryEnd - yAxisDomain[0]) / (yAxisDomain[1] - yAxisDomain[0])) * yAxisHeight;
+    const yAxisDomain = [6 * 60, 22 * 60]; // 6am to 10pm in minutes
+    
+    return (
+      <g>
+        {value.map((item: any, index: number) => {
+            const { entry, color } = item;
+            
+            const entryStart = timeToMinutes(entry.startTime);
+            const entryEnd = timeToMinutes(entry.endTime);
 
-    const barY = y.range[1] + startPos;
-    const barHeight = Math.max(1, endPos - startPos); // Min height of 1px
+            // Using the y-scale function passed implicitly via the y prop
+            const barY = y(entryStart);
+            const barEndY = y(entryEnd);
+            const barHeight = Math.abs(barY - barEndY);
 
-    return <Rectangle x={x} y={barY} width={width} height={barHeight} fill={color} />;
+            // Only render if the entry is within the visible time range
+            if (entryEnd < yAxisDomain[0] || entryStart > yAxisDomain[1] || barHeight <= 0) {
+                return null;
+            }
+
+            return (
+                <rect 
+                    key={index}
+                    x={x} 
+                    y={barY}
+                    width={width} 
+                    height={barHeight}
+                    fill={color} 
+                />
+            );
+        })}
+      </g>
+    );
 };
 
 const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length && payload[0].payload.entry) {
-        const { entry } = payload[0].payload;
+    if (active && payload && payload.length && payload[0].payload.entries) {
+        const { entries } = payload[0].payload;
+        // Tooltip can't easily determine which specific bar is hovered in a group
+        // So we just show all entries for that day.
         return (
             <div className="bg-background p-2 border rounded-md shadow-lg">
-                <p className="font-bold">{entry.title}</p>
-                <p className="text-sm text-muted-foreground">{`${minutesToTime(timeToMinutes(entry.startTime))} - ${minutesToTime(timeToMinutes(entry.endTime))}`}</p>
+                <p className="font-bold mb-2">{label}</p>
+                {entries.map((item: any) => (
+                    <div key={item.entry.id} className="text-sm flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                        <div>
+                            <p className="font-semibold">{item.entry.title}</p>
+                            <p className="text-muted-foreground">{`${minutesToTime(timeToMinutes(item.entry.startTime))} - ${minutesToTime(timeToMinutes(item.entry.endTime))}`}</p>
+                        </div>
+                    </div>
+                ))}
             </div>
         );
     }
@@ -86,46 +112,21 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
         const end = endOfWeek(today, { weekStartsOn: 0 }); // Saturday
         const weekDays = eachDayOfInterval({ start, end });
 
-        let flatData = scheduledEntries.map(entry => ({
-            ...entry,
-            dateObj: parseISO(entry.date + 'T00:00:00'),
-            day: format(parseISO(entry.date + 'T00:00:00'), 'EEE'),
-            color: colorScale(entry.title),
-        }));
-
         return weekDays.map(day => {
             const dateStr = format(day, 'yyyy-MM-dd');
-            const dayEntries = flatData.filter(entry => entry.date === dateStr);
+            const dayEntries = scheduledEntries
+                .filter(entry => entry.date === dateStr)
+                .map(entry => ({
+                    entry,
+                    color: colorScale(entry.title),
+                }));
             
-            // Recharts needs a placeholder value to render the bar cell.
-            // We pass the actual entry data in the payload to the custom shape.
             return {
                 name: format(day, 'EEE'),
-                // We map each entry to its own object so recharts can render a bar for each
-                ...dayEntries.map((entry, i) => ({ [`entry${i}`]: { entry: entry, color: entry.color }}))
-                               .reduce((acc, val) => ({ ...acc, ...val }), {})
+                entries: dayEntries,
             };
         });
     }, [scheduledEntries, colorScale]);
-
-    const bars = React.useMemo(() => {
-        if (!chartData || chartData.length === 0) return [];
-        const maxEntriesPerDay = chartData.reduce((max, day) => {
-            return Math.max(max, Object.keys(day).filter(k => k.startsWith('entry')).length);
-        }, 0);
-        
-        return Array.from({ length: maxEntriesPerDay }).map((_, i) => (
-            <Bar
-                key={`entry${i}`}
-                dataKey={`entry${i}`}
-                shape={<CustomBar />}
-                // A dummy stackId to allow multiple bars per day.
-                // But the custom shape handles absolute positioning, so they won't actually stack.
-                stackId="a"
-            >
-            </Bar>
-        ));
-    }, [chartData]);
     
     const yTicks = Array.from({ length: 17 }, (_, i) => (i + 6) * 60); // 6 AM to 10 PM
     const yTickFormatter = (value: number) => minutesToTime(value);
@@ -151,10 +152,9 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
             />
             <YAxis
               type="number"
-              domain={[6 * 60, 22 * 60]} // 6 AM to 10 PM
+              domain={[22 * 60, 6 * 60]} // Reversed: 10 PM to 6 AM
               ticks={yTicks}
               tickFormatter={yTickFormatter}
-              reversed={true}
               width={80}
               tickLine={false}
               axisLine={false}
@@ -173,7 +173,7 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
               )}
               wrapperStyle={{ bottom: -5 }}
             />
-            {bars}
+            <Bar dataKey="entries" shape={<CustomBar />} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
