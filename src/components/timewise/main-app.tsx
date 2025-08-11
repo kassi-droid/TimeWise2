@@ -71,7 +71,7 @@ export default function MainApp() {
 
       <main className="flex-1 overflow-y-auto pb-24">
         <div className={currentTab === 'add' ? 'block' : 'hidden'}>
-          <AddEntryForm onAddEntry={handleAddEntry} />
+          <AddEntryForm onAddEntry={handleAddEntry} entries={entries} />
         </div>
         <div className={currentTab === 'spreadsheet' ? 'block' : 'hidden'}>
           <SpreadsheetView 

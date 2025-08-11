@@ -1,9 +1,10 @@
+
 "use client";
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface AddEntryFormProps {
   onAddEntry: (entry: Omit<WorkEntry, 'id' | 'paid'>) => void;
+  entries: WorkEntry[];
 }
 
 const timeToMinutes = (timeStr: string): number => {
@@ -32,7 +34,7 @@ const timeToMinutes = (timeStr: string): number => {
     return hours * 60 + minutes;
 };
 
-export default function AddEntryForm({ onAddEntry }: AddEntryFormProps) {
+export default function AddEntryForm({ onAddEntry, entries }: AddEntryFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -44,6 +46,11 @@ export default function AddEntryForm({ onAddEntry }: AddEntryFormProps) {
       hourlyRate: 15.00,
     },
   });
+
+  const uniqueJobTitles = useMemo(() => {
+    const titles = entries.map(entry => entry.jobTitle);
+    return [...new Set(titles)];
+  }, [entries]);
 
   useEffect(() => {
     const savedRate = localStorage.getItem('timewise-defaultHourlyRate');
@@ -95,7 +102,14 @@ export default function AddEntryForm({ onAddEntry }: AddEntryFormProps) {
                     <FormItem>
                       <FormLabel>💼 Job Title</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Freelance Work" {...field} className="text-base" />
+                        <>
+                          <Input placeholder="e.g., Freelance Work" {...field} className="text-base" list="job-titles" />
+                          <datalist id="job-titles">
+                            {uniqueJobTitles.map(title => (
+                              <option key={title} value={title} />
+                            ))}
+                          </datalist>
+                        </>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
