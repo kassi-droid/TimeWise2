@@ -30,32 +30,32 @@ const minutesToTime = (minutes: number) => {
 
 // This component will render a single scheduled block
 const CustomBar = (props: any) => {
-  const { x, y, width, height, payload, jobTitle } = props;
-
-  const entriesForJob = payload.entries.filter((item: any) => item.entry.title === jobTitle);
-
-  if (entriesForJob.length === 0) {
-    return null;
-  }
+  const { x, y, width, height, payload } = props;
+  const { entries } = payload;
 
   const yAxisDomainMinutes = [6 * 60, 22 * 60]; // 6am to 10pm
   const totalMinutesInDomain = yAxisDomainMinutes[1] - yAxisDomainMinutes[0];
-
+  
   return (
     <g>
-      {entriesForJob.map((item: any, index: number) => {
+      {entries.map((item: any, index: number) => {
         const { entry, color } = item;
         const entryStart = timeToMinutes(entry.startTime);
         const entryEnd = timeToMinutes(entry.endTime);
 
-        if (entryStart < yAxisDomainMinutes[0] || entryEnd > yAxisDomainMinutes[1]) {
+        // Don't render if outside the visible time range
+        if (entryEnd < yAxisDomainMinutes[0] || entryStart > yAxisDomainMinutes[1]) {
           return null;
         }
 
-        const startRatio = (entryStart - yAxisDomainMinutes[0]) / totalMinutesInDomain;
-        const endRatio = (entryEnd - yAxisDomainMinutes[0]) / totalMinutesInDomain;
+        // Clamp values to the visible range
+        const clampedStart = Math.max(entryStart, yAxisDomainMinutes[0]);
+        const clampedEnd = Math.min(entryEnd, yAxisDomainMinutes[1]);
 
-        const barY = y + height * startRatio;
+        const startRatio = (clampedStart - yAxisDomainMinutes[0]) / totalMinutesInDomain;
+        const endRatio = (clampedEnd - yAxisDomainMinutes[0]) / totalMinutesInDomain;
+
+        const barY = y + height * (1 - endRatio); // Y is reversed
         const barHeight = height * (endRatio - startRatio);
 
         if (barHeight <= 0 || isNaN(barY) || isNaN(barHeight)) {
@@ -129,6 +129,8 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
             return {
                 name: format(day, 'EEE'),
                 entries: dayEntries,
+                // Add a dummy value for the bar to exist. The actual rendering is custom.
+                value: 1 
             };
         });
     }, [scheduledEntries, colorScale]);
@@ -163,7 +165,7 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
               width={80}
               tickLine={false}
               axisLine={false}
-              reversed={true}
+              reversed
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(200, 200, 200, 0.1)' }}/>
             <Legend
@@ -179,14 +181,7 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
               )}
               wrapperStyle={{ bottom: -5 }}
             />
-            {allJobTitles.map((jobTitle) => (
-              <Bar
-                key={jobTitle}
-                dataKey="entries"
-                stackId="a"
-                shape={<CustomBar jobTitle={jobTitle} />}
-              />
-            ))}
+            <Bar dataKey="value" fill="#8884d8" shape={<CustomBar />} isAnimationActive={false} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
