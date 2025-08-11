@@ -23,13 +23,15 @@ export default function SpreadsheetView({ entries, deleteEntry, togglePaidStatus
   });
 
   const groupedPaidEntries = paidEntries.reduce((acc, entry) => {
-    const paidDate = entry.datePaid || 'unknown';
-    if (!acc[paidDate]) {
-      acc[paidDate] = [];
+    // Group by `datePaid`. If not present, use a fallback, though it should be for paid entries.
+    const paidDateKey = entry.datePaid || new Date(entry.date).toISOString().split('T')[0];
+    if (!acc[paidDateKey]) {
+      acc[paidDateKey] = [];
     }
-    acc[paidDate].push(entry);
+    acc[paidDateKey].push(entry);
     return acc;
   }, {} as Record<string, WorkEntry[]>);
+
 
   const paidPeriods = Object.entries(groupedPaidEntries).sort(([dateA], [dateB]) => {
     return new Date(dateB).getTime() - new Date(dateA).getTime();
@@ -67,7 +69,7 @@ export default function SpreadsheetView({ entries, deleteEntry, togglePaidStatus
                     <div className="flex justify-between w-full pr-4">
                         <span>{jobTitle}</span>
                         <span className="text-right text-muted-foreground">
-                        {totalEarnings.toFixed(2)} ({totalHours.toFixed(1)}h)
+                        ${totalEarnings.toFixed(2)} ({totalHours.toFixed(1)}h)
                         </span>
                     </div>
                     </AccordionTrigger>
@@ -95,28 +97,51 @@ export default function SpreadsheetView({ entries, deleteEntry, togglePaidStatus
       </Card>
 
 
-      {paidPeriods.length > 0 ? (
-        paidPeriods.map(([datePaid, periodEntries], index) => (
-          <WorkLogTable
-            key={datePaid}
-            title={`✅ Paid Period ${paidPeriods.length - index}`}
-            titleClassName="bg-gradient-to-r from-green-500 to-emerald-500 text-white"
-            entries={periodEntries}
-            isPaidLog={true}
-            deleteEntry={deleteEntry}
-            togglePaidStatus={togglePaidStatus}
-          />
-        ))
-      ) : (
-        <WorkLogTable
-            title="✅ Paid Work Log"
-            titleClassName="bg-gradient-to-r from-green-500 to-emerald-500 text-white"
-            entries={[]}
-            isPaidLog={true}
-            deleteEntry={deleteEntry}
-            togglePaidStatus={togglePaidStatus}
-        />
-      )}
+      <Card className="shadow-xl bg-white/95 backdrop-blur-md overflow-hidden">
+        <CardHeader className="p-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+          <CardTitle className="font-headline text-lg">✅ Paid Work</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {paidPeriods.length > 0 ? (
+            <Accordion type="multiple" className="w-full">
+              {paidPeriods.map(([datePaid, periodEntries], index) => {
+                 const periodTotal = periodEntries.reduce((sum, entry) => sum + entry.earnings, 0);
+                 const periodHours = periodEntries.reduce((sum, entry) => sum + entry.workHours, 0);
+                 const paidDate = new Date(datePaid + 'T00:00:00');
+                 const formattedDate = paidDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+                return (
+                  <AccordionItem value={datePaid} key={datePaid} className="border-b last:border-b-0">
+                    <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-secondary/50 text-base font-semibold">
+                      <div className="flex justify-between w-full pr-4">
+                        <span>Paid on {formattedDate}</span>
+                        <span className="text-right text-muted-foreground">
+                          ${periodTotal.toFixed(2)} ({periodHours.toFixed(1)}h)
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="p-0">
+                      <WorkLogTable
+                        entries={periodEntries}
+                        isPaidLog={true}
+                        deleteEntry={deleteEntry}
+                        togglePaidStatus={togglePaidStatus}
+                        hideHeader={true}
+                      />
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+          ) : (
+            <div className="text-center p-10">
+                <div className="text-4xl mb-2">💰</div>
+                <p className="font-semibold">No paid entries yet</p>
+                <p className="text-sm text-muted-foreground">Mark entries as paid to see them here.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

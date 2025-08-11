@@ -66,18 +66,18 @@ export default function WorkLogTable({ title, titleClassName, entries, isPaidLog
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Date</TableHead>
+            <TableHead>Date & Details</TableHead>
+            {!hideHeader && isPaidLog && <TableHead>Job</TableHead>}
             <TableHead className="text-center">Hours</TableHead>
             <TableHead className="text-center">Earned</TableHead>
-            {isPaidLog && <TableHead>Date Paid</TableHead>}
             <TableHead className="text-center">Status</TableHead>
-            {!isPaidLog && <TableHead className="text-center">Delete</TableHead>}
+            <TableHead className="text-center">Delete</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {entries.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={isPaidLog ? 5 : 5} className="h-48 text-center">
+              <TableCell colSpan={6} className="h-48 text-center">
                 <div className="text-4xl mb-2">{emptyState.icon}</div>
                 <p className="font-semibold">{emptyState.message}</p>
                 <p className="text-sm text-muted-foreground">{emptyState.description}</p>
@@ -88,18 +88,13 @@ export default function WorkLogTable({ title, titleClassName, entries, isPaidLog
               <TableRow key={entry.id}>
                 <TableCell>
                   <div className="font-semibold">{formatDate(entry.date)}</div>
-                  {!hideHeader && <div className="text-xs font-medium text-muted-foreground">{entry.jobTitle}</div>}
                   <div className="text-xs text-muted-foreground">{formatTime(entry.startTime)} - {formatTime(entry.endTime)}</div>
                   {entry.lunchBreak > 0 && <div className="text-xs text-muted-foreground">Break: {entry.lunchBreak} min</div>}
                   <div className="text-xs text-muted-foreground">@{entry.hourlyRate.toFixed(2)}/hr</div>
                 </TableCell>
+                 {!hideHeader && isPaidLog && <TableCell><div className="font-semibold">{entry.jobTitle}</div></TableCell>}
                 <TableCell className="text-center font-medium">{entry.workHours.toFixed(1)}h</TableCell>
                 <TableCell className="text-center font-medium">${entry.earnings.toFixed(2)}</TableCell>
-                {isPaidLog && (
-                    <TableCell>
-                        <div className="font-semibold">{formatDate(entry.datePaid || '')}</div>
-                    </TableCell>
-                )}
                 <TableCell className="text-center">
                     <Button
                       variant={isPaidLog ? "secondary" : "outline"}
@@ -111,35 +106,33 @@ export default function WorkLogTable({ title, titleClassName, entries, isPaidLog
                       {isPaidLog ? 'Paid' : 'Pending'}
                     </Button>
                 </TableCell>
-                {!isPaidLog && (
-                  <TableCell className="text-center">
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-100"
-                        >
-                          <Trash2 size={18} />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the work entry.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteEntry(entry.id)}>
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </TableCell>
-                )}
+                <TableCell className="text-center">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-100"
+                      >
+                        <Trash2 size={18} />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete the work entry.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteEntry(entry.id)}>
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </TableCell>
               </TableRow>
             ))
           )}
