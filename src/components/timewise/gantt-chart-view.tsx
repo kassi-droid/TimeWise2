@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Rectangle } from 'recharts';
-import { startOfWeek, endOfWeek, eachDayOfInterval, format, parse } from 'date-fns';
+import { startOfWeek, endOfWeek, eachDayOfInterval, format } from 'date-fns';
 import { scaleOrdinal } from 'd3-scale';
 import { schemeTableau10 } from 'd3-scale-chromatic';
 
@@ -124,9 +124,10 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
             />
             <YAxis
               type="number"
-              domain={[22 * 60, 6 * 60]} // 6 AM to 10 PM, reversed
+              domain={[6 * 60, 22 * 60]} // 6 AM to 10 PM
               ticks={yTicks}
               tickFormatter={yTickFormatter}
+              reversed={true}
               width={80}
               tickLine={false}
               axisLine={false}
