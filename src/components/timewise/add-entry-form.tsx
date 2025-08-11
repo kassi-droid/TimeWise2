@@ -102,14 +102,14 @@ export default function AddEntryForm({ onAddEntry, entries }: AddEntryFormProps)
                     <FormItem>
                       <FormLabel>💼 Job Title</FormLabel>
                       <FormControl>
-                        <>
+                        <div>
                           <Input placeholder="e.g., Freelance Work" {...field} className="text-base" list="job-titles" />
                           <datalist id="job-titles">
                             {uniqueJobTitles.map(title => (
                               <option key={title} value={title} />
                             ))}
                           </datalist>
-                        </>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
