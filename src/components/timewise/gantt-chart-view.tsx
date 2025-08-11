@@ -30,10 +30,11 @@ const minutesToTime = (minutes: number) => {
 
 // This component will render a single scheduled block
 const CustomBar = (props: any) => {
-    const { x, y, width, height, payload, value } = props;
+    const { x, y, width, payload } = props;
     
-    // In this setup, `value` is the array of entries for the day
-    if (!value || value.length === 0) {
+    // In this setup, `payload.entries` is the array of entries for the day
+    const entries = payload.entries;
+    if (!entries || entries.length === 0) {
       return null;
     }
 
@@ -41,15 +42,15 @@ const CustomBar = (props: any) => {
     
     return (
       <g>
-        {value.map((item: any, index: number) => {
+        {entries.map((item: any, index: number) => {
             const { entry, color } = item;
             
             const entryStart = timeToMinutes(entry.startTime);
             const entryEnd = timeToMinutes(entry.endTime);
 
             // Using the y-scale function passed implicitly via the y prop
-            const barY = y(entryStart);
-            const barEndY = y(entryEnd);
+            const barY = y(entryEnd); // recharts y is top-down
+            const barEndY = y(entryStart);
             const barHeight = Math.abs(barY - barEndY);
 
             // Only render if the entry is within the visible time range
@@ -152,12 +153,13 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
             />
             <YAxis
               type="number"
-              domain={[22 * 60, 6 * 60]} // Reversed: 10 PM to 6 AM
+              domain={[6 * 60, 22 * 60]} 
               ticks={yTicks}
               tickFormatter={yTickFormatter}
               width={80}
               tickLine={false}
               axisLine={false}
+              reversed={true}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(200, 200, 200, 0.1)' }}/>
             <Legend
