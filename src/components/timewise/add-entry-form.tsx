@@ -4,7 +4,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,12 +15,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const formSchema = z.object({
   jobTitle: z.string().min(1, 'Job title is required'),
+  otherJobTitle: z.string().optional(),
   date: z.string().min(1, 'Date is required'),
   startTime: z.string().min(1, 'Start time is required'),
   endTime: z.string().min(1, 'End time is required'),
   lunchBreak: z.coerce.number().min(0).default(0),
   hourlyRate: z.coerce.number().positive('Rate must be positive'),
+}).refine(data => {
+    if (data.jobTitle === 'Other') {
+        return !!data.otherJobTitle && data.otherJobTitle.length > 0;
+    }
+    return true;
+}, {
+    message: 'Please specify the job title',
+    path: ['otherJobTitle'],
 });
+
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -39,21 +49,31 @@ const jobTitleOptions = [
   "Babysitting Kennedy",
   "Work for Mom",
   "Miss Sharon",
-  "Mamaw"
+  "Mamaw",
+  "Other"
 ];
 
 export default function AddEntryForm({ onAddEntry, entries }: AddEntryFormProps) {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      jobTitle: '',
-      date: new Date().toISOString().split('T')[0],
-      startTime: '',
-      endTime: '',
-      lunchBreak: 30,
-      hourlyRate: 15.00,
-    },
-  });
+    const [isOtherSelected, setIsOtherSelected] = useState(false);
+    
+    const form = useForm<FormValues>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+          jobTitle: '',
+          otherJobTitle: '',
+          date: new Date().toISOString().split('T')[0],
+          startTime: '',
+          endTime: '',
+          lunchBreak: 30,
+          hourlyRate: 15.00,
+        },
+    });
+
+    const selectedJobTitle = form.watch('jobTitle');
+
+    useEffect(() => {
+        setIsOtherSelected(selectedJobTitle === 'Other');
+    }, [selectedJobTitle]);
 
   useEffect(() => {
     const savedRate = localStorage.getItem('timewise-defaultHourlyRate');
@@ -61,14 +81,18 @@ export default function AddEntryForm({ onAddEntry, entries }: AddEntryFormProps)
       form.setValue('hourlyRate', parseFloat(savedRate));
     }
     const savedTitle = localStorage.getItem('timewise-defaultJobTitle');
-    if (savedTitle) {
+    if (savedTitle && jobTitleOptions.includes(savedTitle)) {
       form.setValue('jobTitle', savedTitle);
     }
   }, [form]);
 
   const onSubmit = (values: FormValues) => {
+    const finalJobTitle = values.jobTitle === 'Other' ? values.otherJobTitle! : values.jobTitle;
+
     localStorage.setItem('timewise-defaultHourlyRate', values.hourlyRate.toString());
-    localStorage.setItem('timewise-defaultJobTitle', values.jobTitle);
+    if (values.jobTitle !== 'Other') {
+        localStorage.setItem('timewise-defaultJobTitle', values.jobTitle);
+    }
     
     const startMinutes = timeToMinutes(values.startTime);
     const endMinutes = timeToMinutes(values.endTime);
@@ -80,12 +104,13 @@ export default function AddEntryForm({ onAddEntry, entries }: AddEntryFormProps)
     const workHours = workMinutes / 60;
     const earnings = workHours * values.hourlyRate;
 
-    onAddEntry({ ...values, workHours, earnings });
+    onAddEntry({ ...values, jobTitle: finalJobTitle, workHours, earnings });
 
     form.reset({
       ...form.getValues(),
       startTime: '',
       endTime: '',
+      otherJobTitle: '',
     });
   };
 
@@ -120,6 +145,23 @@ export default function AddEntryForm({ onAddEntry, entries }: AddEntryFormProps)
                   </FormItem>
                 )}
               />
+
+              {isOtherSelected && (
+                 <FormField
+                    control={form.control}
+                    name="otherJobTitle"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Custom Job Title</FormLabel>
+                        <FormControl>
+                            <Input {...field} placeholder="Enter the job title" className="text-base" />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+              )}
+
               <FormField
                 control={form.control}
                 name="date"
