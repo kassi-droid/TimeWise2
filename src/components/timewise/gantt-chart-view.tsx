@@ -89,7 +89,7 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
     return null;
   };
 
-  const yTicks = Array.from({ length: 18 }, (_, i) => (i + 6) * 60); // 6 AM to 11 PM
+  const yTicks = Array.from({ length: 17 }, (_, i) => (i + 6) * 60); // 6 AM to 10 PM
   const yTickFormatter = (value: number) => minutesToTime(value);
 
   const CustomBar = (props: any) => {
@@ -124,7 +124,7 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
             />
             <YAxis
               type="number"
-              domain={[24 * 60, 6 * 60]} // 6 AM to Midnight, reversed
+              domain={[22 * 60, 6 * 60]} // 6 AM to 10 PM, reversed
               ticks={yTicks}
               tickFormatter={yTickFormatter}
               width={80}
