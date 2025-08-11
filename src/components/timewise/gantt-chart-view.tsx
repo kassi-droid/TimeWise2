@@ -2,17 +2,20 @@
 "use client";
 
 import * as React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { startOfWeek, endOfWeek, eachDayOfInterval, format, parseISO } from 'date-fns';
 import { scaleOrdinal } from 'd3-scale';
 import { schemeTableau10 } from 'd3-scale-chromatic';
+import { format, parseISO, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 
 import type { ScheduledEntry } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import './gantt-chart-view.css';
 
 interface GanttChartViewProps {
   scheduledEntries: ScheduledEntry[];
 }
+
+const START_HOUR = 6; // 6 AM
+const END_HOUR = 22; // 10 PM
 
 const timeToMinutes = (timeStr: string) => {
   if (!timeStr) return 0;
@@ -28,149 +31,112 @@ const minutesToTime = (minutes: number) => {
     return `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`;
 };
 
-// This component will render a single scheduled block
-const CustomBar = (props: any) => {
-  const { x, y, width, height, payload } = props;
-  const { entries } = payload;
-
-  const yAxisDomainMinutes = [6 * 60, 22 * 60]; // 6am to 10pm
-  const totalMinutesInDomain = yAxisDomainMinutes[1] - yAxisDomainMinutes[0];
-  
-  return (
-    <g>
-      {entries.map((item: any, index: number) => {
-        const { entry, color } = item;
-        const entryStart = timeToMinutes(entry.startTime);
-        const entryEnd = timeToMinutes(entry.endTime);
-
-        // Don't render if outside the visible time range
-        if (entryEnd < yAxisDomainMinutes[0] || entryStart > yAxisDomainMinutes[1]) {
-          return null;
-        }
-
-        // Clamp values to the visible range
-        const clampedStart = Math.max(entryStart, yAxisDomainMinutes[0]);
-        const clampedEnd = Math.min(entryEnd, yAxisDomainMinutes[1]);
-
-        const startRatio = (clampedStart - yAxisDomainMinutes[0]) / totalMinutesInDomain;
-        const endRatio = (clampedEnd - yAxisDomainMinutes[0]) / totalMinutesInDomain;
-
-        const barY = y + height * (1 - endRatio); // Y is reversed
-        const barHeight = height * (endRatio - startRatio);
-
-        if (barHeight <= 0 || isNaN(barY) || isNaN(barHeight)) {
-          return null;
-        }
-
-        return (
-          <rect
-            key={index}
-            x={x}
-            y={barY}
-            width={width}
-            height={barHeight}
-            fill={color}
-          />
-        );
-      })}
-    </g>
-  );
-};
-
-const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length && payload[0].payload.entries) {
-        const { entries } = payload[0].payload;
-        if (entries.length === 0) return null;
-        
-        return (
-            <div className="bg-background p-2 border rounded-md shadow-lg">
-                <p className="font-bold mb-2">{label}</p>
-                {entries.map((item: any) => (
-                    <div key={item.entry.id} className="text-sm flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                        <div>
-                            <p className="font-semibold">{item.entry.title}</p>
-                            <p className="text-muted-foreground">{`${minutesToTime(timeToMinutes(item.entry.startTime))} - ${minutesToTime(timeToMinutes(item.entry.endTime))}`}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        );
-    }
-    return null;
-};
-
 
 export default function GanttChartView({ scheduledEntries }: GanttChartViewProps) {
-    
     const allJobTitles = React.useMemo(() => 
         Array.from(new Set(scheduledEntries.map(e => e.title))), 
-    [scheduledEntries]);
+        [scheduledEntries]
+    );
 
     const colorScale = React.useMemo(() => 
         scaleOrdinal(schemeTableau10).domain(allJobTitles),
-    [allJobTitles]);
+        [allJobTitles]
+    );
 
-    const chartData = React.useMemo(() => {
-        const today = new Date();
-        const start = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
-        const end = endOfWeek(today, { weekStartsOn: 0 }); // Saturday
-        const weekDays = eachDayOfInterval({ start, end });
-
-        return weekDays.map(day => {
-            const dateStr = format(day, 'yyyy-MM-dd');
-            const dayEntries = scheduledEntries
-                .filter(entry => entry.date === dateStr)
-                .map(entry => ({
-                    entry,
-                    color: colorScale(entry.title),
-                }));
-            
-            return {
-                name: format(day, 'EEE'),
-                entries: dayEntries,
-                // Add a dummy value for the bar to exist. The actual rendering is custom.
-                value: 1 
-            };
-        });
-    }, [scheduledEntries, colorScale]);
+    const today = new Date();
+    const weekStart = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
+    const weekEnd = endOfWeek(today, { weekStartsOn: 0 }); // Saturday
+    const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
     
-    const yTicks = Array.from({ length: 17 }, (_, i) => (i + 6) * 60); // 6 AM to 10 PM
-    const yTickFormatter = (value: number) => minutesToTime(value);
+    const timeLabels = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => {
+        const hour = START_HOUR + i;
+        const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+        const ampm = hour < 12 || hour === 24 ? 'AM' : 'PM';
+        return `${displayHour} ${ampm}`;
+    });
 
-  return (
-    <Card className="shadow-xl bg-white/95 backdrop-blur-md">
-      <CardHeader>
-        <CardTitle className="font-headline text-xl">🗓️ This Week's Schedule</CardTitle>
-      </CardHeader>
-      <CardContent style={{ height: '500px' }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={chartData}
-            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-            barCategoryGap="20%"
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis 
-              dataKey="name" 
-              tickLine={false}
-              axisLine={false}
-              scale="band"
-            />
-            <YAxis
-              type="number"
-              domain={[6 * 60, 22 * 60]} 
-              ticks={yTicks}
-              tickFormatter={yTickFormatter}
-              width={80}
-              tickLine={false}
-              axisLine={false}
-              reversed
-            />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(200, 200, 200, 0.1)' }}/>
-            <Legend
-              content={() => (
-                <div className="flex flex-wrap justify-center items-center gap-4 mt-4">
+    const entriesByDay = React.useMemo(() => {
+        const grouped: { [key: string]: ScheduledEntry[] } = {};
+        for (const entry of scheduledEntries) {
+            const entryDate = format(parseISO(entry.date + "T00:00:00"), 'yyyy-MM-dd');
+            if (!grouped[entryDate]) {
+                grouped[entryDate] = [];
+            }
+            grouped[entryDate].push(entry);
+        }
+        return grouped;
+    }, [scheduledEntries]);
+
+    return (
+        <Card className="shadow-xl bg-white/95 backdrop-blur-md overflow-x-auto">
+            <CardHeader>
+                <CardTitle className="font-headline text-xl">🗓️ This Week's Schedule</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+                <div className="gantt-chart-grid" style={{ gridTemplateRows: `40px repeat(${END_HOUR - START_HOUR}, 40px)` }}>
+                    {/* Day Labels */}
+                    <div style={{ gridColumn: 1 }}></div> {/* Blank corner */}
+                    {weekDays.map(day => (
+                        <div key={day.toString()} className="gantt-day-label">
+                           {format(day, 'EEE')}
+                        </div>
+                    ))}
+
+                    {/* Time Labels & Grid Cells */}
+                    {timeLabels.slice(0, -1).map((label, index) => (
+                        <React.Fragment key={label}>
+                            <div className="gantt-time-label" style={{ gridRow: index + 2 }}>
+                                {label}
+                            </div>
+                        </React.Fragment>
+                    ))}
+                    
+                    {/* Grid Lines */}
+                    <div className="gantt-grid-lines" style={{gridRow: '2 / -1'}}>
+                         {Array.from({ length: 7 * (END_HOUR - START_HOUR) }).map((_, i) => (
+                            <div key={i} className="gantt-grid-row-line">
+                                <div className="gantt-grid-line h-full"></div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Scheduled Blocks */}
+                    {weekDays.map((day, dayIndex) => {
+                        const dateStr = format(day, 'yyyy-MM-dd');
+                        const dayEntries = entriesByDay[dateStr] || [];
+                        return (
+                            <div key={dateStr} style={{ gridColumn: dayIndex + 2, gridRow: '2 / -1', position: 'relative' }}>
+                                {dayEntries.map(entry => {
+                                    const startMinutes = timeToMinutes(entry.startTime);
+                                    const endMinutes = timeToMinutes(entry.endTime);
+
+                                    const top = ((startMinutes / 60) - START_HOUR) * 40;
+                                    const height = ((endMinutes - startMinutes) / 60) * 40;
+
+                                    if (height <= 0) return null;
+
+                                    return (
+                                        <div
+                                            key={entry.id}
+                                            className="gantt-block"
+                                            style={{
+                                                position: 'absolute',
+                                                top: `${top}px`,
+                                                height: `${height}px`,
+                                                width: '100%',
+                                                backgroundColor: colorScale(entry.title),
+                                            }}
+                                        >
+                                           <div className="gantt-block-title">{entry.title}</div>
+                                           <div className="gantt-block-time">{minutesToTime(startMinutes)} - {minutesToTime(endMinutes)}</div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        );
+                    })}
+                </div>
+                 <div className="flex flex-wrap justify-center items-center gap-4 mt-4">
                   {allJobTitles.map((title) => (
                     <div key={title} className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colorScale(title) }} />
@@ -178,13 +144,7 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
                     </div>
                   ))}
                 </div>
-              )}
-              wrapperStyle={{ bottom: -5 }}
-            />
-            <Bar dataKey="value" fill="#8884d8" shape={<CustomBar />} isAnimationActive={false} />
-          </BarChart>
-        </ResponsiveContainer>
-      </CardContent>
-    </Card>
-  );
+            </CardContent>
+        </Card>
+    );
 }

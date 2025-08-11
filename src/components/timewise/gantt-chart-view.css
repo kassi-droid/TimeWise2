@@ -1,0 +1,75 @@
+
+.gantt-chart-grid {
+  display: grid;
+  grid-template-columns: 50px repeat(7, 1fr); /* Time labels + 7 days */
+  grid-auto-rows: 40px; /* Each row is 1 hour */
+  position: relative;
+  background-color: var(--card);
+}
+
+.gantt-time-label {
+  grid-column: 1;
+  text-align: right;
+  padding-right: 8px;
+  font-size: 10px;
+  color: hsl(var(--muted-foreground));
+  position: relative;
+  top: -8px; /* Align with grid lines */
+}
+
+.gantt-day-label {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 0;
+  border-bottom: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+}
+
+.gantt-grid-lines {
+  position: absolute;
+  top: 40px; /* Start after day labels */
+  left: 50px; /* Start after time labels */
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(16, 1fr); /* 16 hours from 6am to 10pm */
+  pointer-events: none; /* Allow clicking through */
+}
+
+.gantt-grid-line {
+  border-right: 1px solid hsl(var(--border));
+}
+.gantt-grid-line:last-child {
+  border-right: none;
+}
+.gantt-grid-row-line {
+    border-bottom: 1px solid hsl(var(--border));
+}
+
+.gantt-block {
+  position: relative;
+  margin: 1px 2px;
+  border-radius: 4px;
+  color: white;
+  padding: 4px;
+  font-size: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.gantt-block-title {
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gantt-block-time {
+    font-size: 10px;
+    opacity: 0.8;
+}
