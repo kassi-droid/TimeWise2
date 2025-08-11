@@ -360,7 +360,7 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry, dele
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>
                           This will permanently delete the scheduled shift. This action cannot be undone.
-                        </d'AlertDialogDescription>
+                        </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
