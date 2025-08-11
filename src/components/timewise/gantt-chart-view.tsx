@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Rectangle } from 'recharts';
 import { startOfWeek, endOfWeek, eachDayOfInterval, format, parse } from 'date-fns';
 import { scaleOrdinal } from 'd3-scale';
 import { schemeTableau10 } from 'd3-scale-chromatic';
@@ -15,6 +15,7 @@ interface GanttChartViewProps {
 }
 
 const timeToMinutes = (timeStr: string) => {
+  if (!timeStr) return 0;
   const [hours, minutes] = timeStr.split(':').map(Number);
   return hours * 60 + minutes;
 };
@@ -34,27 +35,26 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
     const end = endOfWeek(today, { weekStartsOn: 0 }); // Saturday
     const weekDays = eachDayOfInterval({ start, end });
 
-    const data = weekDays.map(day => ({
-      name: format(day, 'EEE'),
-      date: format(day, 'yyyy-MM-dd'),
-    }));
-
-    const entriesByDay: { [key: string]: any[] } = {};
-
-    scheduledEntries.forEach(entry => {
-      if (!entriesByDay[entry.date]) {
-        entriesByDay[entry.date] = [];
-      }
-      entriesByDay[entry.date].push({
-        ...entry,
-        timeRange: [timeToMinutes(entry.startTime), timeToMinutes(entry.endTime)],
+    return weekDays.map(day => {
+      const dateStr = format(day, 'yyyy-MM-dd');
+      const dayEntries = scheduledEntries
+        .filter(entry => entry.date === dateStr)
+        .map((entry, index) => ({
+          ...entry,
+          timeRange: [timeToMinutes(entry.startTime), timeToMinutes(entry.endTime)],
+          y: timeToMinutes(entry.startTime),
+          height: timeToMinutes(entry.endTime) - timeToMinutes(entry.startTime),
+          // Add a dynamic key for Recharts to treat it as a separate series
+          [`entry${index}`]: [timeToMinutes(entry.startTime), timeToMinutes(entry.endTime) - timeToMinutes(entry.startTime)],
+        }));
+      
+      const dayData: { name: string, [key: string]: any } = { name: format(day, 'EEE') };
+      dayEntries.forEach((entry, index) => {
+        dayData[`entry${index}`] = entry[`entry${index}`];
+        dayData[`entry${index}_title`] = entry.title;
       });
+      return dayData;
     });
-    
-    return data.map(day => ({
-      ...day,
-      entries: entriesByDay[day.date] || [],
-    }));
 
   }, [scheduledEntries]);
   
@@ -65,21 +65,24 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
   const colorScale = React.useMemo(() => 
     scaleOrdinal(schemeTableau10).domain(allJobTitles),
   [allJobTitles]);
+  
+  const maxEntriesPerDay = React.useMemo(() => 
+    chartData.reduce((max, day) => Math.max(max, Object.keys(day).filter(k => k.startsWith('entry')).length / 2), 0),
+  [chartData]);
 
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const parentPayload = payload[0].payload;
-      const entryIndex = parseInt(payload[0].dataKey.split('.')[1]);
-      const entry = parentPayload.entries[entryIndex];
-      
-      if (!entry) return null;
+      const data = payload[0];
+      const titleKey = `${data.dataKey}_title`;
+      const title = data.payload[titleKey];
+      const [start, duration] = data.value;
+      const end = start + duration;
 
       return (
         <div className="bg-background p-2 border rounded-md shadow-lg">
-          <p className="font-bold">{entry.title}</p>
-          <p className="text-sm">{`${format(parse(entry.date, 'yyyy-MM-dd', new Date()), 'MMMM d')}`}</p>
-          <p className="text-sm text-muted-foreground">{`${minutesToTime(entry.timeRange[0])} - ${minutesToTime(entry.timeRange[1])}`}</p>
+          <p className="font-bold">{title}</p>
+          <p className="text-sm text-muted-foreground">{`${minutesToTime(start)} - ${minutesToTime(end)}`}</p>
         </div>
       );
     }
@@ -88,6 +91,18 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
 
   const yTicks = Array.from({ length: 18 }, (_, i) => (i + 6) * 60); // 6 AM to 11 PM
   const yTickFormatter = (value: number) => minutesToTime(value);
+
+  const CustomBar = (props: any) => {
+    const { fill, x, y, width, height, payload, dataKey } = props;
+    if (!height || height <= 0) return null;
+    
+    const titleKey = `${dataKey}_title`;
+    const title = payload[titleKey];
+    const barColor = colorScale(title);
+
+    return <Rectangle {...props} fill={barColor} />;
+  };
+
 
   return (
     <Card className="shadow-xl bg-white/95 backdrop-blur-md">
@@ -98,24 +113,20 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
-            layout="vertical"
             margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-            barCategoryGap={20}
+            barCategoryGap="20%"
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
-              type="category" 
               dataKey="name" 
-              orientation="bottom"
               tickLine={false}
               axisLine={false}
             />
             <YAxis
               type="number"
-              domain={[6 * 60, 24 * 60]} // 6 AM to Midnight
+              domain={[24 * 60, 6 * 60]} // 6 AM to Midnight, reversed
               ticks={yTicks}
               tickFormatter={yTickFormatter}
-              reversed={true}
               width={80}
               tickLine={false}
               axisLine={false}
@@ -135,14 +146,13 @@ export default function GanttChartView({ scheduledEntries }: GanttChartViewProps
               wrapperStyle={{ bottom: -5 }}
             />
             {
-              chartData[0]?.entries.map((_, index) => (
-                <Bar key={`bar-${index}`} dataKey={`entries[${index}].timeRange`} stackId="a" fill="#8884d8">
-                  {chartData.map((dayData, dayIndex) => {
-                    const entry = dayData.entries[index];
-                    const color = entry ? colorScale(entry.title) : 'transparent';
-                    return <Cell key={`cell-${dayIndex}`} fill={color} />;
-                  })}
-                </Bar>
+              Array.from({ length: maxEntriesPerDay }).map((_, index) => (
+                 <Bar 
+                  key={`bar-${index}`} 
+                  dataKey={`entry${index}`} 
+                  stackId="a"
+                  shape={<CustomBar />}
+                 />
               ))
             }
           </BarChart>
