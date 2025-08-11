@@ -19,11 +19,15 @@
 
 .gantt-day-label {
   text-align: center;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
-  padding: 8px 0;
+  padding: 4px 0;
   border-bottom: 1px solid hsl(var(--border));
   color: hsl(var(--foreground));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.2;
 }
 
 .gantt-grid-lines {

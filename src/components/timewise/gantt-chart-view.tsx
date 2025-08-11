@@ -41,10 +41,25 @@ export default function GanttChartView({ scheduledEntries, selectedDate }: Gantt
 
     const purpleScheme = ['#8A2BE2', ...schemeTableau10.filter(c => c !== '#8A2BE2')];
 
-    const colorScale = React.useMemo(() => 
-        scaleOrdinal(purpleScheme).domain(allJobTitles),
-        [allJobTitles]
-    );
+    const colorScale = React.useMemo(() => {
+        const uniqueTitles = Array.from(new Set(scheduledEntries.map(e => e.title)));
+        const domain = uniqueTitles.map(title => title === 'Work Shift' ? 'Work Shift' : title);
+        const range = uniqueTitles.map(title => title === 'Work Shift' ? '#8A2BE2' : schemeTableau10[uniqueTitles.indexOf(title) % schemeTableau10.length]);
+        
+        const scale = scaleOrdinal<string, string>().domain(domain).range(range);
+        
+        // Ensure "Work Shift" is always purple if it exists
+        if (uniqueTitles.includes('Work Shift')) {
+            scale.domain([...scale.domain(), 'Work Shift']).range([...scale.range(), '#8A2BE2']);
+        } else {
+             // Fallback for other jobs to have different colors
+            const otherTitles = allJobTitles.filter(t => t !== 'Work Shift');
+            const otherColors = schemeTableau10.slice(0, otherTitles.length);
+            scale.domain([...scale.domain(), ...otherTitles]).range([...scale.range(), ...otherColors]);
+        }
+
+        return scale;
+    }, [scheduledEntries, allJobTitles]);
 
     const today = selectedDate || new Date();
     const weekStart = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
@@ -83,7 +98,8 @@ export default function GanttChartView({ scheduledEntries, selectedDate }: Gantt
                     <div style={{ gridColumn: 1 }}></div> {/* Blank corner */}
                     {weekDays.map(day => (
                         <div key={day.toString()} className="gantt-day-label">
-                           {format(day, 'EEE')}
+                           <span>{format(day, 'EEE')}</span>
+                           <span className="text-xs font-normal text-muted-foreground">{format(day, 'd')}</span>
                         </div>
                     ))}
 
