@@ -89,7 +89,7 @@ export function CalendarTab({ jobs, jobTitles, onAddJob, onDeleteJob }: Calendar
             hasJobs: datesWithJobs,
           }}
           modifiersClassNames={{
-            hasJobs: "border-2 border-purple-medium",
+            hasJobs: "bg-purple-light text-purple-dark rounded-md",
           }}
         />
       </div>
