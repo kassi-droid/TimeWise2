@@ -1,3 +1,4 @@
+
 import type { Metadata } from "next";
 import { PT_Sans } from "next/font/google";
 import "./globals.css";
@@ -5,14 +6,15 @@ import { cn } from "@/lib/utils";
 
 const ptSans = PT_Sans({ 
   subsets: ["latin"],
-  weight: ["400", "700"] 
+  weight: ["400", "700"],
+  variable: "--font-sans",
 });
 
 export const metadata: Metadata = {
   title: "TimeWise",
-  description: "Track your work hours and earnings with ease.",
+  description: "Track your time, maximize your earnings",
   manifest: "/manifest.json",
-  themeColor: "#D0BFFF",
+  themeColor: "#DDA0DD", // purple-light
   appleWebAppCapable: "yes",
   appleWebAppStatusBarStyle: "default",
   appleWebAppTitle: "TimeWise",
@@ -28,8 +30,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={cn("min-h-screen bg-background font-sans antialiased", ptSans.className)}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={cn("min-h-screen bg-background font-sans antialiased", ptSans.variable)}>
         {children}
       </body>
     </html>
