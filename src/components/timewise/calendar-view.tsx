@@ -87,16 +87,18 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry, dele
   });
 
   React.useEffect(() => {
-    try {
-        const storedTitles = localStorage.getItem(JOB_TITLES_STORAGE_KEY);
-        if (storedTitles) {
-            setJobTitleOptions(JSON.parse(storedTitles));
-        } else {
+    if (typeof window !== 'undefined') {
+        try {
+            const storedTitles = localStorage.getItem(JOB_TITLES_STORAGE_KEY);
+            if (storedTitles) {
+                setJobTitleOptions(JSON.parse(storedTitles));
+            } else {
+                setJobTitleOptions(defaultJobTitles);
+            }
+        } catch (error) {
+            console.warn('Could not read job titles from localStorage:', error);
             setJobTitleOptions(defaultJobTitles);
         }
-    } catch (error) {
-        console.warn('Could not read job titles from localStorage:', error);
-        setJobTitleOptions(defaultJobTitles);
     }
   }, []);
 
@@ -146,10 +148,12 @@ export default function CalendarView({ scheduledEntries, addScheduledEntry, dele
       if (!jobTitleOptions.includes(finalTitle)) {
         const updatedTitles = [...jobTitleOptions, finalTitle];
         setJobTitleOptions(updatedTitles);
-        try {
-            localStorage.setItem(JOB_TITLES_STORAGE_KEY, JSON.stringify(updatedTitles));
-        } catch (error) {
-            console.warn('Could not save job titles to localStorage:', error);
+        if (typeof window !== 'undefined') {
+            try {
+                localStorage.setItem(JOB_TITLES_STORAGE_KEY, JSON.stringify(updatedTitles));
+            } catch (error) {
+                console.warn('Could not save job titles to localStorage:', error);
+            }
         }
       }
     }

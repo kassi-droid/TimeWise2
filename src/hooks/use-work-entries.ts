@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -12,6 +13,7 @@ export function useWorkEntries() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchEntries = useCallback(async () => {
+    setIsLoading(true);
     try {
       const q = query(collection(db, ENTRIES_COLLECTION), orderBy("date", "desc"));
       const querySnapshot = await getDocs(q);

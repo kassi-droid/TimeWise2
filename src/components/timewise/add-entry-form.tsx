@@ -105,13 +105,15 @@ export default function AddEntryForm({ onAddEntry, entries }: AddEntryFormProps)
     }, [selectedJobTitle]);
 
     useEffect(() => {
-        const savedRate = localStorage.getItem('timewise-defaultHourlyRate');
-        if (savedRate) {
-            form.setValue('hourlyRate', parseFloat(savedRate));
-        }
-        const savedTitle = localStorage.getItem('timewise-defaultJobTitle');
-        if (savedTitle && (jobTitleOptions.includes(savedTitle) || defaultJobTitles.includes(savedTitle))) {
-            form.setValue('jobTitle', savedTitle);
+        if (typeof window !== 'undefined') {
+            const savedRate = localStorage.getItem('timewise-defaultHourlyRate');
+            if (savedRate) {
+                form.setValue('hourlyRate', parseFloat(savedRate));
+            }
+            const savedTitle = localStorage.getItem('timewise-defaultJobTitle');
+            if (savedTitle && (jobTitleOptions.includes(savedTitle) || defaultJobTitles.includes(savedTitle))) {
+                form.setValue('jobTitle', savedTitle);
+            }
         }
     }, [form, jobTitleOptions]);
 
@@ -145,9 +147,11 @@ export default function AddEntryForm({ onAddEntry, entries }: AddEntryFormProps)
             }
         }
 
-        localStorage.setItem('timewise-defaultHourlyRate', values.hourlyRate.toString());
-        if (values.jobTitle !== 'Other') {
-            localStorage.setItem('timewise-defaultJobTitle', values.jobTitle);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('timewise-defaultHourlyRate', values.hourlyRate.toString());
+            if (values.jobTitle !== 'Other') {
+                localStorage.setItem('timewise-defaultJobTitle', values.jobTitle);
+            }
         }
         
         const startMinutes = timeToMinutes(values.startTime);
