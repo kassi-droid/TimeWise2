@@ -89,8 +89,6 @@ export function CalendarTab({ jobs, jobTitles, onAddJob, onDeleteJob }: Calendar
         />
       </div>
 
-      <GanttChart jobs={weekJobs} week={week} jobTitles={jobTitles} />
-
       {selectedDate && jobsForSelectedDate.length > 0 && (
         <div>
           <h3 className="font-semibold text-purple-dark mb-2">Jobs for {selectedDate.toLocaleDateString()}</h3>
@@ -101,6 +99,8 @@ export function CalendarTab({ jobs, jobTitles, onAddJob, onDeleteJob }: Calendar
           </div>
         </div>
       )}
+
+      <GanttChart jobs={weekJobs} week={week} jobTitles={jobTitles} />
 
       <div>
         <h3 className="font-semibold text-purple-dark mb-2">Upcoming Jobs</h3>
