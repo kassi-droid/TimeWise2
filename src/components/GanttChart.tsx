@@ -34,29 +34,27 @@ export function GanttChart({ jobs, week, jobTitles }: GanttChartProps) {
         className="grid relative border border-gray-300" 
         style={{ 
           gridTemplateColumns: '80px repeat(7, 1fr)', 
-          gridTemplateRows: `repeat(${hours.length}, 40px) 40px` 
+          gridTemplateRows: `60px repeat(${hours.length}, 40px)` 
         }}
       >
+        {/* Day Labels (Header) */}
+        <div className="day bg-gray-100 border-b border-gray-300"></div>
+        {week.map((date, index) => (
+            <div key={index} className="day bg-gray-100 border-b border-r border-gray-300 text-center font-bold pt-2">
+                <div>{daysOfWeek[index]}</div>
+                <div className="text-xs font-normal">{date.getDate()}</div>
+            </div>
+        ))}
+
         {/* Time Labels & Grid Cells */}
         {hours.map(hour => (
           <div key={hour} className="contents">
-            <div className="time bg-gray-100 border-b border-gray-300 flex items-center justify-center text-xs">
+            <div className="time bg-gray-100 border-b border-r border-gray-300 flex items-center justify-center text-xs">
               {`${(hour % 12) || 12}:00 ${hour < 12 ? 'AM' : 'PM'}`}
             </div>
             {daysOfWeek.map(day => <div key={`${day}-${hour}`} className="cell border border-gray-200"></div>)}
           </div>
         ))}
-
-        {/* Day Labels */}
-        <div className="contents">
-            <div className="day bg-gray-100 border-t border-gray-300"></div>
-            {week.map((date, index) => (
-                <div key={index} className="day bg-gray-100 border-t border-gray-300 text-center font-bold pt-2">
-                    <div>{daysOfWeek[index]}</div>
-                    <div className="text-xs font-normal">{date.getDate()}</div>
-                </div>
-            ))}
-        </div>
 
         {/* Job Blocks */}
         {jobs.map(job => {
@@ -66,7 +64,7 @@ export function GanttChart({ jobs, week, jobTitles }: GanttChartProps) {
           const jobDate = new Date(job.date);
           const dayIndex = jobDate.getDay();
 
-          const top = ((startH + startM / 60) - startHour) * 40;
+          const top = ((startH + startM / 60) - startHour) * 40 + 60; // +60 for header
           const height = ((endH + endM / 60) - (startH + startM / 60)) * 40;
 
           if (height <= 0) return null;
