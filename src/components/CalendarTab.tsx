@@ -41,7 +41,7 @@ export function CalendarTab({ jobs, jobTitles, onAddJob, onDeleteJob }: Calendar
         mode="single"
         selected={selectedDate}
         onSelect={setSelectedDate}
-        className="rounded-xl border bg-gradient-to-br from-pastel-purple to-purple-light p-0 mx-auto"
+        className="rounded-xl border bg-gradient-to-br from-pastel-purple to-purple-light p-0"
         classNames={{
             day_selected: "bg-purple-medium text-white",
             day_today: "bg-purple-dark/80 text-white",
