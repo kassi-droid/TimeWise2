@@ -96,11 +96,11 @@ export default function Home() {
   const toggleWorkEntryStatus = (id: number) => {
     setWorkEntries(prev => prev.map(entry => {
       if (entry.id === id) {
-        const isPaid = entry.status === 'pending';
+        const isNowPaid = entry.status === 'pending';
         return { 
           ...entry, 
-          status: isPaid ? 'paid' : 'pending',
-          datePaid: isPaid ? new Date().toISOString().split('T')[0] : undefined,
+          status: isNowPaid ? 'paid' : 'pending',
+          datePaid: isNowPaid ? new Date().toISOString().split('T')[0] : undefined,
         };
       }
       return entry;

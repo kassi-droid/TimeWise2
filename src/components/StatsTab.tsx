@@ -79,6 +79,13 @@ export function StatsTab({ entries, onDelete, onToggleStatus }: StatsTabProps) {
         {Object.entries(groupedPaid).length > 0 ? Object.entries(groupedPaid).map(([jobTitle, jobEntries]) => {
             const jobTotalHours = jobEntries.reduce((sum, entry) => sum + entry.hoursWorked, 0);
             const jobTotalPay = jobEntries.reduce((sum, entry) => sum + entry.totalPay, 0);
+
+            const groupedByDatePaid = jobEntries.reduce((acc, entry) => {
+                const dateKey = entry.datePaid || 'Unknown Date';
+                (acc[dateKey] = acc[dateKey] || []).push(entry);
+                return acc;
+            }, {} as Record<string, WorkEntry[]>);
+
             return (
               <AccordionItem value={`paid-${jobTitle}`} key={`paid-${jobTitle}`} className="bg-white/80 rounded-xl border-b-0">
                 <AccordionTrigger className="p-3 bg-gradient-to-br from-pastel-purple to-purple-light rounded-xl hover:no-underline">
@@ -87,8 +94,25 @@ export function StatsTab({ entries, onDelete, onToggleStatus }: StatsTabProps) {
                         <span className="text-sm text-purple-medium whitespace-nowrap pl-2">{jobTotalHours.toFixed(1)}h &bull; ${jobTotalPay.toFixed(2)}</span>
                     </div>
                 </AccordionTrigger>
-                <AccordionContent className="p-0">
-                    <EntryTable entries={jobEntries} onDelete={onDelete} onToggleStatus={onToggleStatus} />
+                <AccordionContent className="p-2 space-y-2">
+                    <Accordion type="multiple" className="w-full space-y-2">
+                        {Object.entries(groupedByDatePaid).map(([datePaid, dateEntries]) => {
+                            const dateTotalPay = dateEntries.reduce((sum, entry) => sum + entry.totalPay, 0);
+                            return (
+                                <AccordionItem value={`paid-${jobTitle}-${datePaid}`} key={`paid-${jobTitle}-${datePaid}`} className="bg-white/80 rounded-xl border-b-0">
+                                    <AccordionTrigger className="p-3 bg-gradient-to-br from-pastel-purple/50 to-purple-light/50 rounded-xl hover:no-underline">
+                                        <div className="flex justify-between items-center w-full">
+                                            <h5 className="font-semibold text-purple-dark text-left">Paid on {new Date(datePaid).toLocaleDateString()}</h5>
+                                            <span className="text-sm text-purple-medium whitespace-nowrap pl-2">${dateTotalPay.toFixed(2)}</span>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="p-0">
+                                        <EntryTable entries={dateEntries} onDelete={onDelete} onToggleStatus={onToggleStatus} />
+                                    </AccordionContent>
+                                </AccordionItem>
+                            );
+                        })}
+                    </Accordion>
                 </AccordionContent>
               </AccordionItem>
             )
