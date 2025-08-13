@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trash2 } from 'lucide-react';
+import { GanttChart } from './GanttChart';
 
 interface CalendarTabProps {
   jobs: CalendarJob[];
@@ -16,6 +17,14 @@ interface CalendarTabProps {
   onAddJob: (job: Omit<CalendarJob, 'id'>) => void;
   onDeleteJob: (id: number) => void;
 }
+
+// Helper to get the start of the week (Sunday)
+const getStartOfWeek = (date: Date) => {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day;
+  return new Date(d.setDate(diff));
+};
 
 export function CalendarTab({ jobs, jobTitles, onAddJob, onDeleteJob }: CalendarTabProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -32,6 +41,23 @@ export function CalendarTab({ jobs, jobTitles, onAddJob, onDeleteJob }: Calendar
     
   const selectedDateStr = selectedDate ? selectedDate.toISOString().split('T')[0] : null;
   const jobsForSelectedDate = selectedDateStr ? jobsByDate[selectedDateStr] || [] : [];
+
+  const startOfWeek = getStartOfWeek(selectedDate || new Date());
+  const week = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(startOfWeek);
+    date.setDate(date.getDate() + i);
+    return date;
+  });
+
+  const weekJobs = jobs.filter(job => {
+    const jobDate = new Date(job.date);
+    jobDate.setHours(0,0,0,0); // Normalize time
+    const weekStart = new Date(week[0]);
+    weekStart.setHours(0,0,0,0);
+    const weekEnd = new Date(week[6]);
+    weekEnd.setHours(0,0,0,0);
+    return jobDate >= weekStart && jobDate <= weekEnd;
+  });
 
   return (
     <div className="space-y-6">
@@ -62,6 +88,8 @@ export function CalendarTab({ jobs, jobTitles, onAddJob, onDeleteJob }: Calendar
           }}
         />
       </div>
+
+      <GanttChart jobs={weekJobs} week={week} jobTitles={jobTitles} />
 
       {selectedDate && jobsForSelectedDate.length > 0 && (
         <div>
