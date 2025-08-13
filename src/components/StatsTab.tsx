@@ -4,7 +4,7 @@
 import type { WorkEntry } from '@/app/page';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 
@@ -99,43 +99,58 @@ export function StatsTab({ entries, onDelete, onToggleStatus }: StatsTabProps) {
   );
 }
 
-const EntryTable = ({ entries, onDelete, onToggleStatus }: Omit<StatsTabProps, 'entries'>) => (
-    <div className="overflow-x-auto">
-        <Table>
-            <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-purple-dark font-semibold text-sm">Date</TableHead>
-                    <TableHead className="text-purple-dark font-semibold text-sm">Hours</TableHead>
-                    <TableHead className="text-purple-dark font-semibold text-sm">Status</TableHead>
-                    <TableHead className="text-purple-dark font-semibold text-sm text-right">Actions</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {entries.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(entry => (
-                    <TableRow key={entry.id} className="border-purple-light hover:bg-pastel-purple/50">
-                        <TableCell className="text-sm text-purple-dark">{new Date(entry.date).toLocaleDateString()}</TableCell>
-                        <TableCell className="text-sm text-purple-dark">{entry.hoursWorked.toFixed(1)}</TableCell>
-                        <TableCell>
-                            <Button
-                                onClick={() => onToggleStatus(entry.id)}
-                                variant="outline"
-                                className={`text-xs px-2 py-1 h-auto rounded-full transition-colors ${
-                                entry.status === 'pending'
-                                    ? 'bg-yellow-200 text-yellow-800 hover:bg-yellow-300 border-yellow-300'
-                                    : 'bg-green-200 text-green-800 hover:bg-green-300 border-green-300'
-                                }`}
-                            >
-                                {entry.status}
-                            </Button>
-                        </TableCell>
-                        <TableCell className="text-right">
-                            <Button onClick={() => onDelete(entry.id)} variant="ghost" size="icon" className="h-8 w-8">
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                        </TableCell>
+const EntryTable = ({ entries, onDelete, onToggleStatus }: { entries: WorkEntry[]; onDelete: (id: number) => void; onToggleStatus: (id: number) => void; }) => {
+    const totalHours = entries.reduce((sum, entry) => sum + entry.hoursWorked, 0);
+    const totalPay = entries.reduce((sum, entry) => sum + entry.totalPay, 0);
+
+    return (
+        <div className="overflow-x-auto">
+            <Table>
+                <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                        <TableHead className="text-purple-dark font-semibold text-sm">Date</TableHead>
+                        <TableHead className="text-purple-dark font-semibold text-sm">Hours</TableHead>
+                        <TableHead className="text-purple-dark font-semibold text-sm">Pay</TableHead>
+                        <TableHead className="text-purple-dark font-semibold text-sm">Status</TableHead>
+                        <TableHead className="text-purple-dark font-semibold text-sm text-right">Actions</TableHead>
                     </TableRow>
-                ))}
-            </TableBody>
-        </Table>
-    </div>
-)
+                </TableHeader>
+                <TableBody>
+                    {entries.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(entry => (
+                        <TableRow key={entry.id} className="border-purple-light hover:bg-pastel-purple/50">
+                            <TableCell className="text-sm text-purple-dark">{new Date(entry.date).toLocaleDateDateString()}</TableCell>
+                            <TableCell className="text-sm text-purple-dark">{entry.hoursWorked.toFixed(1)}</TableCell>
+                            <TableCell className="text-sm text-purple-dark">${entry.totalPay.toFixed(2)}</TableCell>
+                            <TableCell>
+                                <Button
+                                    onClick={() => onToggleStatus(entry.id)}
+                                    variant="outline"
+                                    className={`text-xs px-2 py-1 h-auto rounded-full transition-colors ${
+                                    entry.status === 'pending'
+                                        ? 'bg-yellow-200 text-yellow-800 hover:bg-yellow-300 border-yellow-300'
+                                        : 'bg-green-200 text-green-800 hover:bg-green-300 border-green-300'
+                                    }`}
+                                >
+                                    {entry.status}
+                                </Button>
+                            </TableCell>
+                            <TableCell className="text-right">
+                                <Button onClick={() => onDelete(entry.id)} variant="ghost" size="icon" className="h-8 w-8">
+                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+                <TableFooter>
+                    <TableRow className="hover:bg-transparent font-semibold">
+                        <TableCell className="text-purple-dark">Total</TableCell>
+                        <TableCell className="text-purple-dark">{totalHours.toFixed(1)}</TableCell>
+                        <TableCell className="text-purple-dark">${totalPay.toFixed(2)}</TableCell>
+                        <TableCell colSpan={2}></TableCell>
+                    </TableRow>
+                </TableFooter>
+            </Table>
+        </div>
+    )
+}
