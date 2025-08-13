@@ -37,29 +37,31 @@ export function CalendarTab({ jobs, jobTitles, onAddJob, onDeleteJob }: Calendar
     <div className="space-y-6">
       <ScheduleJobForm jobTitles={jobTitles} onAddJob={onAddJob} />
       
-      <Calendar
-        mode="single"
-        selected={selectedDate}
-        onSelect={setSelectedDate}
-        className="rounded-xl border bg-gradient-to-br from-pastel-purple to-purple-light p-0"
-        classNames={{
-            day_selected: "bg-purple-medium text-white",
-            day_today: "bg-purple-dark/80 text-white",
-            cell: "relative",
-        }}
-        components={{
-            DayContent: (props) => {
-                const dateStr = props.date.toISOString().split('T')[0];
-                const hasJobs = jobsByDate[dateStr] && jobsByDate[dateStr].length > 0;
-                return (
-                    <div className="relative">
-                        {props.date.getDate()}
-                        {hasJobs && <div className="absolute bottom-1 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full bg-purple-medium"></div>}
-                    </div>
-                );
-            }
-        }}
-      />
+      <div className="flex justify-center">
+        <Calendar
+          mode="single"
+          selected={selectedDate}
+          onSelect={setSelectedDate}
+          className="rounded-xl border bg-gradient-to-br from-pastel-purple to-purple-light p-0"
+          classNames={{
+              day_selected: "bg-purple-medium text-white",
+              day_today: "bg-purple-dark/80 text-white",
+              cell: "relative",
+          }}
+          components={{
+              DayContent: (props) => {
+                  const dateStr = props.date.toISOString().split('T')[0];
+                  const hasJobs = jobsByDate[dateStr] && jobsByDate[dateStr].length > 0;
+                  return (
+                      <div className="relative">
+                          {props.date.getDate()}
+                          {hasJobs && <div className="absolute bottom-1 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full bg-purple-medium"></div>}
+                      </div>
+                  );
+              }
+          }}
+        />
+      </div>
 
       {selectedDate && jobsForSelectedDate.length > 0 && (
         <div>
