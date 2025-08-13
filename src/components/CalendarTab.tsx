@@ -59,6 +59,12 @@ export function CalendarTab({ jobs, jobTitles, onAddJob, onDeleteJob }: Calendar
     return jobDate >= weekStart && jobDate <= weekEnd;
   });
 
+  const datesWithJobs = Object.keys(jobsByDate).map(dateStr => {
+    // To avoid timezone issues, create date in UTC
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(Date.UTC(year, month - 1, day));
+  });
+
   return (
     <div className="space-y-6">
       <ScheduleJobForm jobTitles={jobTitles} onAddJob={onAddJob} />
@@ -72,19 +78,18 @@ export function CalendarTab({ jobs, jobTitles, onAddJob, onDeleteJob }: Calendar
           classNames={{
               day_selected: "bg-purple-medium text-white",
               day_today: "bg-purple-dark/80 text-white",
+              day_outside: "text-muted-foreground opacity-50",
+              day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
+              day_disabled: "text-muted-foreground opacity-50",
               cell: "relative",
+              head_cell: "text-purple-dark font-semibold",
+              nav_button: "text-purple-dark",
           }}
-          components={{
-              DayContent: (props) => {
-                  const dateStr = props.date.toISOString().split('T')[0];
-                  const hasJobs = jobsByDate[dateStr] && jobsByDate[dateStr].length > 0;
-                  return (
-                      <div className="relative">
-                          {props.date.getDate()}
-                          {hasJobs && <div className="absolute bottom-1 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full bg-purple-medium"></div>}
-                      </div>
-                  );
-              }
+          modifiers={{
+            hasJobs: datesWithJobs,
+          }}
+          modifiersClassNames={{
+            hasJobs: "border-2 border-purple-medium",
           }}
         />
       </div>
@@ -186,7 +191,7 @@ const JobCard = ({ job, onDelete }: { job: CalendarJob, onDelete: (id: number) =
     <div className="bg-gradient-to-br from-pastel-purple to-purple-light p-3 rounded-lg flex justify-between items-center">
         <div>
             <div className="font-semibold text-purple-dark">{job.jobTitle}</div>
-            <div className="text-sm text-purple-medium">{new Date(job.date).toLocaleDateString()} &bull; {job.startTime} - {job.endTime}</div>
+            <div className="text-sm text-purple-medium">{new Date(job.date + "T00:00:00").toLocaleDateString()} &bull; {job.startTime} - {job.endTime}</div>
         </div>
         <Button onClick={() => onDelete(job.id)} variant="ghost" size="icon" className="h-8 w-8">
             <Trash2 className="h-4 w-4 text-red-500" />
