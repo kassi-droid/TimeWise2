@@ -61,7 +61,9 @@ export function GanttChart({ jobs, week, jobTitles }: GanttChartProps) {
           const [startH, startM] = job.startTime.split(':').map(Number);
           const [endH, endM] = job.endTime.split(':').map(Number);
 
-          const jobDate = new Date(job.date);
+          // Fix for timezone issue: parse date string as local time.
+          // The 'T00:00' ensures it's parsed as midnight local time, not UTC.
+          const jobDate = new Date(`${job.date}T00:00`);
           const dayIndex = jobDate.getDay();
 
           const top = ((startH + startM / 60) - startHour) * 40 + 60; // +60 for header
