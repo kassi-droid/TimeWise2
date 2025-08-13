@@ -118,7 +118,7 @@ const EntryTable = ({ entries, onDelete, onToggleStatus }: { entries: WorkEntry[
                 <TableBody>
                     {entries.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(entry => (
                         <TableRow key={entry.id} className="border-purple-light hover:bg-pastel-purple/50">
-                            <TableCell className="text-sm text-purple-dark">{new Date(entry.date).toLocaleDateDateString()}</TableCell>
+                            <TableCell className="text-sm text-purple-dark">{new Date(entry.date).toLocaleDateString()}</TableCell>
                             <TableCell className="text-sm text-purple-dark">{entry.hoursWorked.toFixed(1)}</TableCell>
                             <TableCell className="text-sm text-purple-dark">${entry.totalPay.toFixed(2)}</TableCell>
                             <TableCell>
