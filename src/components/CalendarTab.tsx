@@ -50,7 +50,7 @@ export function CalendarTab({ jobs, jobTitles, onAddJob, onDeleteJob }: Calendar
   });
 
   const weekJobs = jobs.filter(job => {
-    const jobDate = new Date(job.date);
+    const jobDate = new Date(`${job.date}T00:00:00`); // Use local time
     jobDate.setHours(0,0,0,0); // Normalize time
     const weekStart = new Date(week[0]);
     weekStart.setHours(0,0,0,0);
@@ -60,9 +60,8 @@ export function CalendarTab({ jobs, jobTitles, onAddJob, onDeleteJob }: Calendar
   });
 
   const datesWithJobs = Object.keys(jobsByDate).map(dateStr => {
-    // To avoid timezone issues, create date in UTC
-    const [year, month, day] = dateStr.split('-').map(Number);
-    return new Date(Date.UTC(year, month - 1, day));
+    // To avoid timezone issues, create date in local time by adding T00:00:00
+    return new Date(`${dateStr}T00:00:00`);
   });
 
   return (
@@ -89,19 +88,23 @@ export function CalendarTab({ jobs, jobTitles, onAddJob, onDeleteJob }: Calendar
             hasJobs: datesWithJobs,
           }}
           modifiersClassNames={{
-            hasJobs: "bg-purple-light text-purple-dark rounded-md",
+            hasJobs: "bg-purple-light/75 text-purple-dark rounded-md",
           }}
         />
       </div>
 
-      {selectedDate && jobsForSelectedDate.length > 0 && (
-        <div>
+      {selectedDate && (
+        <div className="pt-4">
           <h3 className="font-semibold text-purple-dark mb-2">Jobs for {selectedDate.toLocaleDateString()}</h3>
-          <div className="space-y-2">
-            {jobsForSelectedDate.map(job => (
-              <JobCard key={job.id} job={job} onDelete={onDeleteJob} />
-            ))}
-          </div>
+          {jobsForSelectedDate.length > 0 ? (
+            <div className="space-y-2">
+              {jobsForSelectedDate.map(job => (
+                <JobCard key={job.id} job={job} onDelete={onDeleteJob} />
+              ))}
+            </div>
+          ) : (
+             <p className="text-purple-medium text-center py-2">No jobs for this day</p>
+          )}
         </div>
       )}
 
@@ -191,7 +194,7 @@ const JobCard = ({ job, onDelete }: { job: CalendarJob, onDelete: (id: number) =
     <div className="bg-gradient-to-br from-pastel-purple to-purple-light p-3 rounded-lg flex justify-between items-center">
         <div>
             <div className="font-semibold text-purple-dark">{job.jobTitle}</div>
-            <div className="text-sm text-purple-medium">{new Date(job.date + "T00:00:00").toLocaleDateString()} &bull; {job.startTime} - {job.endTime}</div>
+            <div className="text-sm text-purple-medium">{new Date(`${job.date}T00:00:00`).toLocaleDateString()} &bull; {job.startTime} - {job.endTime}</div>
         </div>
         <Button onClick={() => onDelete(job.id)} variant="ghost" size="icon" className="h-8 w-8">
             <Trash2 className="h-4 w-4 text-red-500" />
