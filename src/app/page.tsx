@@ -88,7 +88,9 @@ export default function Home() {
   };
 
   const deleteWorkEntry = (id: number) => {
-    setWorkEntries(prev => prev.filter(entry => entry.id !== id));
+    if (window.confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
+      setWorkEntries(prev => prev.filter(entry => entry.id !== id));
+    }
   };
 
   const toggleWorkEntryStatus = (id: number) => {
@@ -110,7 +112,9 @@ export default function Home() {
   };
 
   const deleteCalendarJob = (id: number) => {
-    setCalendarJobs(prev => prev.filter(job => job.id !== id));
+    if (window.confirm('Are you sure you want to delete this calendar job? This action cannot be undone.')) {
+      setCalendarJobs(prev => prev.filter(job => job.id !== id));
+    }
   };
 
   return (
