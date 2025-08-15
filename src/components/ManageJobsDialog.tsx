@@ -12,9 +12,10 @@ interface ManageJobsDialogProps {
   setIsOpen: (isOpen: boolean) => void;
   jobTitles: string[];
   setJobTitles: (titles: string[]) => void;
+  onDeleteJobTitle: (title: string) => void;
 }
 
-export function ManageJobsDialog({ isOpen, setIsOpen, jobTitles, setJobTitles }: ManageJobsDialogProps) {
+export function ManageJobsDialog({ isOpen, setIsOpen, jobTitles, setJobTitles, onDeleteJobTitle }: ManageJobsDialogProps) {
   const [newJobTitle, setNewJobTitle] = useState('');
 
   const handleAddJob = () => {
@@ -29,9 +30,7 @@ export function ManageJobsDialog({ isOpen, setIsOpen, jobTitles, setJobTitles }:
       alert('You must have at least one job title.');
       return;
     }
-    if (window.confirm(`Are you sure you want to delete "${titleToDelete}"? This cannot be undone.`)) {
-        setJobTitles(jobTitles.filter(title => title !== titleToDelete));
-    }
+    onDeleteJobTitle(titleToDelete);
   };
 
   return (

@@ -38,6 +38,9 @@ export type CalendarJob = {
 type DeletionTarget = {
   id: number;
   type: 'workEntry' | 'calendarJob';
+} | {
+  id: string;
+  type: 'jobTitle';
 } | null;
 
 
@@ -99,8 +102,8 @@ export default function Home() {
     setCalendarJobs(prev => [...prev, { ...job, id: Date.now() }]);
   };
 
-  const handleOpenConfirmDialog = (id: number, type: 'workEntry' | 'calendarJob') => {
-    setDeletionTarget({ id, type });
+  const handleOpenConfirmDialog = (id: number | string, type: 'workEntry' | 'calendarJob' | 'jobTitle') => {
+    setDeletionTarget({ id, type } as DeletionTarget);
   };
   
   const handleConfirmDelete = () => {
@@ -110,7 +113,10 @@ export default function Home() {
         setWorkEntries(prev => prev.filter(entry => entry.id !== deletionTarget.id));
     } else if (deletionTarget.type === 'calendarJob') {
         setCalendarJobs(prev => prev.filter(job => job.id !== deletionTarget.id));
+    } else if (deletionTarget.type === 'jobTitle') {
+        setJobTitles(prev => prev.filter(title => title !== deletionTarget.id));
     }
+
 
     setDeletionTarget(null); // Close the modal
   };
@@ -128,6 +134,21 @@ export default function Home() {
       return entry;
     }));
   };
+  
+  const getDialogInfo = () => {
+    if (!deletionTarget) return { title: '', description: '' };
+    switch (deletionTarget.type) {
+      case 'workEntry':
+        return { title: 'Delete Work Entry?', description: 'This action cannot be undone. The entry will be permanently deleted.' };
+      case 'calendarJob':
+        return { title: 'Delete Calendar Job?', description: 'This action cannot be undone. The job will be permanently deleted.' };
+      case 'jobTitle':
+        return { title: `Delete Job: "${deletionTarget.id}"?`, description: 'This cannot be undone. You may need to re-categorize existing entries.' };
+      default:
+        return { title: 'Are you sure?', description: 'This action cannot be undone.' };
+    }
+  };
+
 
   return (
     <>
@@ -188,13 +209,14 @@ export default function Home() {
               setIsOpen={setManageJobsOpen}
               jobTitles={jobTitles}
               setJobTitles={setJobTitles}
+              onDeleteJobTitle={(title) => handleOpenConfirmDialog(title, 'jobTitle')}
           />
           <ConfirmationDialog 
             isOpen={!!deletionTarget}
             onClose={() => setDeletionTarget(null)}
             onConfirm={handleConfirmDelete}
-            title="Delete this entry?"
-            description="This action cannot be undone."
+            title={getDialogInfo().title}
+            description={getDialogInfo().description}
           />
       </div>
     </>
