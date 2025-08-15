@@ -88,9 +88,7 @@ export default function Home() {
   };
 
   const deleteWorkEntry = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this entry?')) {
-      setWorkEntries(prev => prev.filter(entry => entry.id !== id));
-    }
+    setWorkEntries(prev => prev.filter(entry => entry.id !== id));
   };
 
   const toggleWorkEntryStatus = (id: number) => {
@@ -112,9 +110,7 @@ export default function Home() {
   };
 
   const deleteCalendarJob = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this scheduled job?')) {
-      setCalendarJobs(prev => prev.filter(job => job.id !== id));
-    }
+    setCalendarJobs(prev => prev.filter(job => job.id !== id));
   };
 
   return (
