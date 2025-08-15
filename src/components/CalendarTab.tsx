@@ -60,8 +60,8 @@ export function CalendarTab({ jobs, jobTitles, onAddJob, onDeleteJob }: Calendar
   });
 
   const datesWithJobs = Object.keys(jobsByDate).map(dateStr => {
-    // To avoid timezone issues, create date in local time by adding T00:00:00
-    return new Date(`${dateStr}T00:00:00`);
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(Date.UTC(year, month - 1, day));
   });
 
   return (
@@ -88,7 +88,7 @@ export function CalendarTab({ jobs, jobTitles, onAddJob, onDeleteJob }: Calendar
             hasJobs: datesWithJobs,
           }}
           modifiersClassNames={{
-            hasJobs: "bg-purple-light/75 text-purple-dark",
+            hasJobs: "bg-purple-medium/50 text-purple-dark font-bold",
           }}
         />
       </div>
