@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -88,7 +87,8 @@ export default function Home() {
   };
 
   const deleteWorkEntry = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
+    const confirmed = window.confirm('Are you sure you want to delete this entry? This action cannot be undone.');
+    if (confirmed) {
       setWorkEntries(prev => prev.filter(entry => entry.id !== id));
     }
   };
@@ -112,7 +112,8 @@ export default function Home() {
   };
 
   const deleteCalendarJob = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this calendar job? This action cannot be undone.')) {
+    const confirmed = window.confirm('Are you sure you want to delete this calendar job? This action cannot be undone.');
+    if (confirmed) {
       setCalendarJobs(prev => prev.filter(job => job.id !== id));
     }
   };
