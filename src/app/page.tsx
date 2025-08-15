@@ -125,10 +125,19 @@ export default function Home() {
     setWorkEntries(prev => prev.map(entry => {
       if (entry.id === id) {
         const isNowPaid = entry.status === 'pending';
+        let paidDate = undefined;
+        if (isNowPaid) {
+          const today = new Date();
+          // Format to YYYY-MM-DD to avoid timezone issues with toISOString()
+          const year = today.getFullYear();
+          const month = String(today.getMonth() + 1).padStart(2, '0');
+          const day = String(today.getDate()).padStart(2, '0');
+          paidDate = `${year}-${month}-${day}`;
+        }
         return { 
           ...entry, 
           status: isNowPaid ? 'paid' : 'pending',
-          datePaid: isNowPaid ? new Date().toISOString().split('T')[0] : undefined,
+          datePaid: paidDate,
         };
       }
       return entry;

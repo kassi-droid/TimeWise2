@@ -98,11 +98,13 @@ export function StatsTab({ entries, onDelete, onToggleStatus }: StatsTabProps) {
                     <Accordion type="multiple" className="w-full space-y-2">
                         {Object.entries(groupedByDatePaid).map(([datePaid, dateEntries]) => {
                             const dateTotalPay = dateEntries.reduce((sum, entry) => sum + entry.totalPay, 0);
+                            // Add a 'T00:00:00' to the date string to ensure it's parsed in the local timezone, not UTC
+                            const displayDate = new Date(`${datePaid}T00:00:00`).toLocaleDateString();
                             return (
                                 <AccordionItem value={`paid-${jobTitle}-${datePaid}`} key={`paid-${jobTitle}-${datePaid}`} className="bg-white/80 rounded-xl border-b-0">
                                     <AccordionTrigger className="p-3 bg-gradient-to-br from-pastel-purple/50 to-purple-light/50 rounded-xl hover:no-underline">
                                         <div className="flex justify-between items-center w-full">
-                                            <h5 className="font-semibold text-purple-dark text-left">Paid on {new Date(datePaid).toLocaleDateString()}</h5>
+                                            <h5 className="font-semibold text-purple-dark text-left">Paid on {displayDate}</h5>
                                             <span className="text-sm text-purple-medium whitespace-nowrap pl-2">${dateTotalPay.toFixed(2)}</span>
                                         </div>
                                     </AccordionTrigger>
@@ -142,7 +144,7 @@ const EntryTable = ({ entries, onDelete, onToggleStatus }: { entries: WorkEntry[
                 <TableBody>
                     {entries.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(entry => (
                         <TableRow key={entry.id} className="border-purple-light hover:bg-pastel-purple/50">
-                            <TableCell className="text-sm text-purple-dark">{new Date(entry.date).toLocaleDateString()}</TableCell>
+                            <TableCell className="text-sm text-purple-dark">{new Date(`${entry.date}T00:00:00`).toLocaleDateString()}</TableCell>
                             <TableCell className="text-sm text-purple-dark">{entry.hoursWorked.toFixed(1)}</TableCell>
                             <TableCell className="text-sm text-purple-dark">${entry.totalPay.toFixed(2)}</TableCell>
                             <TableCell>
