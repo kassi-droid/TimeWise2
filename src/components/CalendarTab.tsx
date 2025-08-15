@@ -92,7 +92,7 @@ export function CalendarTab({ jobs, jobTitles, onAddJob, onDeleteJob }: Calendar
           }}
         />
       </div>
-
+      
       {selectedDate && (
         <div className="pt-4">
           <h3 className="font-semibold text-purple-dark mb-2">Jobs for {selectedDate.toLocaleDateString()}</h3>
