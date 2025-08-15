@@ -61,7 +61,7 @@ export function CalendarTab({ jobs, jobTitles, onAddJob, onDeleteJob }: Calendar
 
   const datesWithJobs = Object.keys(jobsByDate).map(dateStr => {
     const [year, month, day] = dateStr.split('-').map(Number);
-    return new Date(Date.UTC(year, month - 1, day));
+    return new Date(year, month - 1, day);
   });
 
   return (
